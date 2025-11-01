@@ -2,7 +2,7 @@ from flask import Flask, render_template, session, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 import random
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='')
 app.secret_key = "anonchat"
 socketio = SocketIO(app)
 
@@ -108,6 +108,7 @@ def format_room_list():
     ]
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=9807)
+    socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
