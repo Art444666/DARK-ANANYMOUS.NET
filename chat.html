@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ANONYMOUS.NET</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chat, #userlist { list-style: none; padding: 0; }
+    #chat li, #userlist li { margin-bottom: 5px; }
+    .owner { font-weight: bold; color: darkred; }
+    input, button { margin: 5px; padding: 5px; }
+    #roomlist { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>💬 Чат</h2>
+  <p>Вы: <strong>{{ username }}</strong></p>
+
+  <div id="roomlist">
+    <h3>📋 Комнаты</h3>
+    <ul id="rooms">
+      {% for room, info in rooms.items() %}
+        <li>
+          {{ room }} {% if info.private %}[приват]{% endif %}
+          <button onclick="joinRoom('{{ room }}', {{ 'true' if info.private else 'false' }})">Подключиться</button>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <h3>➕ Создать комнату</h3>
+  <div id="create-room">
+    <input id="newroom" placeholder="Название комнаты" />
+    <input id="newpass" placeholder="Пароль (опционально)" />
+    <button onclick="createRoom()">Создать</button>
+  </div>
+
+  <div id="chatbox" style="display:none;">
+    <h3>💬 Чат</h3>
+    <input id="msg" autocomplete="off" placeholder="Сообщение или /ban ник" />
+    <button onclick="sendMessage()">Отправить</button>
+    <ul id="chat"></ul>
+
+    <h3>👥 Участники</h3>
+    <ul id="userlist"></ul>
+    <p id="ownerinfo"></p>
+  </div>
+
+  <script>
+    const socket = io();
+
+    function createRoom() {
+      const room = document.getElementById("newroom").value.trim();
+      const password = document.getElementById("newpass").value.trim();
+      if (!room) {
+        alert("Введите название комнаты.");
+        return;
+      }
+      socket.emit("create_room", { room, password });
+    }
+
+    function joinRoom(room, isPrivate) {
+      let password = "";
+      if (isPrivate) {
+        password = prompt("Введите пароль для комнаты " + room);
+      }
+      socket.emit("join_room", { room, password });
+    }
+
+    socket.on("room_error", msg => alert(msg));
+
+    socket.on("room_list", list => {
+      const ul = document.getElementById("rooms");
+      ul.innerHTML = "";
+      list.forEach(room => {
+        const cleanName = room.replace(" [приват]", "").trim();
+        const li = document.createElement("li");
+        li.textContent = room;
+        const btn = document.createElement("button");
+        btn.textContent = "Подключиться";
+        btn.onclick = () => joinRoom(cleanName, room.includes("[приват]"));
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    });
+
+    socket.on("room_joined", room => {
+      document.getElementById("chatbox").style.display = "block";
+      document.getElementById("chat").innerHTML = "";
+    });
+
+    socket.on("message", msg => {
+      const li = document.createElement("li");
+      li.textContent = msg;
+      document.getElementById("chat").appendChild(li);
+    });
+
+    socket.on("userlist", data => {
+      const ul = document.getElementById("userlist");
+      ul.innerHTML = "";
+      data.users.forEach(u => {
+        const li = document.createElement("li");
+        li.textContent = u;
+        ul.appendChild(li);
+      });
+      document.getElementById("ownerinfo").innerHTML = `👑 Владелец: <span class="owner">${data.owner}</span>`;
+    });
+
+    function sendMessage() {
+      const input = document.getElementById("msg");
+      socket.send(input.value);
+      input.value = "";
+    }
+  </script>
+</body>
+</html>
+
