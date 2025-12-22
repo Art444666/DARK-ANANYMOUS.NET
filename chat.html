@@ -2,49 +2,120 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Анонимный чат</title>
+  <title>💬 Анонимный чат</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <style>
+    /* Общая тёмная тема с градиентами */
     body {
-      font-family: sans-serif;
-      margin: 20px;
-      background: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #1a1f2b, #0d1117);
+      color: #e6edf3;
+      min-height: 100vh;
     }
+
+    h2 {
+      text-align: center;
+      color: #58a6ff;
+      margin-bottom: 10px;
+      text-shadow: 0 0 8px rgba(88,166,255,0.6);
+    }
+
+    p {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
     .section {
-      border: 1px solid #ccc;
-      border-radius: 8px;
+      border: 1px solid #30363d;
+      border-radius: 12px;
       padding: 15px;
       margin-bottom: 20px;
-      background: #fff;
+      background: rgba(22,27,34,0.85);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    .section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+    }
+
     .section h3 {
       margin-top: 0;
-      color: #333;
+      color: #79c0ff;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 5px;
     }
+
     #chat, #userlist {
       list-style: none;
       padding: 0;
+      max-height: 200px;
+      overflow-y: auto;
     }
+
     #chat li, #userlist li {
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #21262d, #161b22);
+      border: 1px solid #30363d;
+      animation: fadeIn 0.3s ease;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .owner {
       font-weight: bold;
-      color: darkred;
+      color: #ff7b72;
     }
+
     input, button {
       margin: 5px;
-      padding: 5px;
-    }
-    .room-card {
-      border: 1px solid #ddd;
       padding: 10px;
-      margin: 5px;
-      border-radius: 5px;
-      background: #f0f0f0;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      color: #e6edf3;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    input:focus {
+      border-color: #58a6ff;
+      box-shadow: 0 0 8px rgba(88,166,255,0.6);
+      outline: none;
+    }
+
+    button {
+      cursor: pointer;
+      background: linear-gradient(135deg, #238636, #2ea043);
+      border: none;
+      color: #fff;
+      font-weight: bold;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(46,160,67,0.6);
+    }
+
+    .room-card {
+      border: 1px solid #30363d;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #21262d, #161b22);
+      transition: transform 0.2s ease;
+    }
+    .room-card:hover {
+      transform: translateX(5px);
     }
     .room-card.private {
-      background: #ffecec;
+      background: linear-gradient(135deg, #3b1f1f, #161b22);
+      border-color: #ff7b72;
     }
   </style>
 </head>
@@ -160,6 +231,7 @@
   </script>
 </body>
 </html>
+
 
 
 
