@@ -1,12 +1,13 @@
 from flask import Flask, render_template, render_template_string, session, request, redirect, url_for
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room, emit, send
 import random
 
+# ---------- Инициализация ----------
 app = Flask(__name__, template_folder='')
 app.secret_key = "anonchat"
 socketio = SocketIO(app)
 
-# ---------- Глобальные структуры ----------
+# ---------- Глобальное состояние ----------
 rooms = {}         # room_name → {'owner': username, 'private': bool, 'password': str}
 participants = {}  # room_name → set of usernames
 bans = {}          # room_name → set of banned usernames
@@ -19,7 +20,7 @@ blacklist_ips = set()
 global_block = False
 block_reason = "Глобальная блокировка"
 
-# ---------- Шаблон регистрации ----------
+# ---------- Встроенный шаблон регистрации ----------
 REGISTER_TEMPLATE = """
 <!doctype html>
 <html lang="ru">
@@ -54,20 +55,20 @@ REGISTER_TEMPLATE = """
 </html>
 """
 
-# ---------- Маршруты ----------
+# ---------- Роуты ----------
 @app.route('/')
 def index():
-    ip = request.remote_addr
+    ip = request.remote_addr or '0.0.0.0'
 
-    # Проверка блокировок
+    # Блокировка (глобальная или по IP)
     if global_block or ip in blacklist_ips:
         return render_template('block.html', company="AnonChat", ip=ip, reason=block_reason)
 
-    # Если админ уже вошёл
+    # Админ уже в сессии → панель
     if session.get('is_admin'):
         return render_template('admin.html', username="Админ")
 
-    # Если IP зарегистрирован → подтягиваем ник
+    # Авторизация по IP
     if ip in users:
         username = users[ip]
         session['username'] = username
@@ -75,16 +76,16 @@ def index():
         session['is_admin'] = False
         return render_template('chat.html', username=username, rooms=rooms)
 
-    # Иначе → регистрация
+    # Регистрация
     return render_template_string(REGISTER_TEMPLATE, ip=ip, error=None)
 
 @app.route('/register', methods=['POST'])
 def register():
-    ip = request.remote_addr
-    nickname = request.form.get('nickname', '').strip()
+    ip = request.remote_addr or '0.0.0.0'
+    nickname = (request.form.get('nickname') or '').strip()
 
     # Валидация
-    if not nickname or len(nickname) < 2:
+    if len(nickname) < 2:
         return render_template_string(REGISTER_TEMPLATE, ip=ip, error="Ник слишком короткий.")
     if len(nickname) > 24:
         return render_template_string(REGISTER_TEMPLATE, ip=ip, error="Ник превышает 24 символа.")
@@ -99,30 +100,36 @@ def register():
 
 @app.route('/admin')
 def admin_panel():
-    ip = request.remote_addr
+    ip = request.remote_addr or '0.0.0.0'
     if not session.get('is_admin'):
         return render_template('block.html', company="AnonChat", ip=ip, reason="Нет прав администратора")
     return render_template('admin.html', username="Админ")
-    # ---------- Socket.IO события ----------
 
+# ---------- Socket.IO события ----------
 @socketio.on('connect')
 def on_connect():
-    # если у сессии нет ника — назначим гостя
+    # Гарантируем ник в сессии
     if not session.get('username'):
-        ip = request.remote_addr
+        ip = request.remote_addr or '0.0.0.0'
         session['username'] = users.get(ip, f"Гость#{random.randint(1000,9999)}")
-    sid_to_name[request.sid] = session.get('username')
+        session['room'] = None
+        session.setdefault('is_admin', False)
 
-    # ⚡️ сразу отправляем список комнат при подключении
+    sid_to_name[request.sid] = session['username']
+    # Список комнат сразу при подключении
     emit('room_list', format_room_list())
+
+@socketio.on('disconnect')
+def on_disconnect():
+    # Безопасно очищаем маппинг
+    sid_to_name.pop(request.sid, None)
 
 @socketio.on('admin_login')
 def admin_login(data):
-    password = data.get('password', '')
+    password = (data or {}).get('password', '')
     if password == ADMIN_PASS:
         session['is_admin'] = True
         emit('admin_success', '✅ Вход в режим админа выполнен.')
-        # редирект на панель
         emit('redirect_admin', '/admin', to=request.sid)
     else:
         emit('admin_error', '❌ Неверный пароль.')
@@ -132,33 +139,38 @@ def admin_ban(data):
     if not session.get('is_admin'):
         emit('admin_error', '⚠️ Нет прав администратора.')
         return
-    target_ip = data.get('ip')
-    reason = data.get('reason', 'Нарушение правил')
-    if target_ip:
-        blacklist_ips.add(target_ip)
-        emit('admin_success', f'⛔ IP {target_ip} добавлен в чёрный список.')
-    else:
+
+    target_ip = (data or {}).get('ip', '').strip()
+    reason = (data or {}).get('reason', 'Нарушение правил')
+
+    if not target_ip:
         emit('admin_error', '❌ Не указан IP.')
+        return
+
+    blacklist_ips.add(target_ip)
+    # можно поменять причину глобально, но обычно причина индивидуальна
+    emit('admin_success', f'⛔ IP {target_ip} добавлен в чёрный список.')
 
 @socketio.on('admin_global_block')
 def admin_global_block_evt(data):
     if not session.get('is_admin'):
         emit('admin_error', '⚠️ Нет прав администратора.')
         return
+
+    enabled = bool((data or {}).get('enabled', False))
+    reason = (data or {}).get('reason', 'Глобальная блокировка')
+
     global global_block, block_reason
-    global_block = data.get('enabled', False)
-    block_reason = data.get('reason', 'Глобальная блокировка')
-    if global_block:
-        emit('admin_success', '🌐 Включена глобальная блокировка сайта.')
-    else:
-        emit('admin_success', '🌐 Глобальная блокировка отключена.')
+    global_block = enabled
+    block_reason = reason
+
+    emit('admin_success', '🌐 Глобальная блокировка включена.' if enabled else '🌐 Глобальная блокировка отключена.')
 
 @socketio.on('create_room')
 def create_room(data):
-    room = data.get('room', '').strip()
-    password = data.get('password', '').strip()
-    private = bool(password)
-    username = session.get('username')
+    room = (data or {}).get('room', '').strip()
+    password = (data or {}).get('password', '').strip()
+    username = session.get('username', 'Гость')
 
     if not room:
         emit('room_error', '❌ Укажите название комнаты.')
@@ -169,23 +181,26 @@ def create_room(data):
 
     rooms[room] = {
         'owner': username,
-        'private': private,
+        'private': bool(password),
         'password': password
     }
     participants[room] = set()
     bans[room] = set()
+
     emit('room_list', format_room_list(), broadcast=True)
 
 @socketio.on('join_room')
 def join_room_event(data):
-    room = data.get('room', '').strip()
-    password = data.get('password', '').strip()
-    username = session.get('username')
+    room = (data or {}).get('room', '').strip()
+    password = (data or {}).get('password', '').strip()
+    username = session.get('username', 'Гость')
 
     if room not in rooms:
         emit('room_error', '❌ Комната не найдена.')
         return
-    if rooms[room]['private'] and rooms[room]['password'] != password:
+
+    info = rooms[room]
+    if info['private'] and info['password'] != password:
         emit('room_error', '🔐 Неверный пароль.')
         return
 
@@ -193,12 +208,13 @@ def join_room_event(data):
     join_room(room)
     participants[room].add(username)
     send(f"🚪 {username} вошёл в комнату {room}.", to=room)
+
     update_userlist(room)
     emit('room_joined', room)
 
 @socketio.on('message')
 def handle_message(msg):
-    username = session.get('username')
+    username = session.get('username', 'Гость')
     room = session.get('room')
 
     if not room:
@@ -209,9 +225,10 @@ def handle_message(msg):
         send("⛔ Вы забанены в этой комнате.", to=request.sid)
         return
 
+    # Команды владельца комнаты
     if isinstance(msg, str) and msg.startswith("/ban "):
         target = msg.split("/ban ", 1)[1].strip()
-        if rooms[room]['owner'] == username:
+        if rooms.get(room, {}).get('owner') == username:
             bans[room].add(target)
             send(f"🔒 {target} забанен владельцем {username}.", to=room)
         else:
@@ -219,7 +236,7 @@ def handle_message(msg):
 
     elif isinstance(msg, str) and msg.startswith("/unban "):
         target = msg.split("/unban ", 1)[1].strip()
-        if rooms[room]['owner'] == username:
+        if rooms.get(room, {}).get('owner') == username:
             bans[room].discard(target)
             send(f"🔓 {target} разбанен владельцем {username}.", to=room)
         else:
@@ -232,19 +249,21 @@ def handle_message(msg):
 
 # ---------- Утилиты ----------
 def update_userlist(room):
-    userlist = list(participants.get(room, []))
-    owner = rooms[room]['owner']
-    emit('userlist', {'users': userlist, 'owner': owner}, to=room)
+    users_in_room = list(participants.get(room, []))
+    owner = rooms.get(room, {}).get('owner', '')
+    emit('userlist', {'users': users_in_room, 'owner': owner}, to=room)
 
 def format_room_list():
     return [
-        f"{name} {'[приват]' if info['private'] else ''}"
+        f"{name} {'[приват]' if info.get('private') else ''}"
         for name, info in rooms.items()
     ]
 
 # ---------- Запуск ----------
 if __name__ == '__main__':
+    # Для локальной разработки достаточно:
     socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
 
