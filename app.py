@@ -92,18 +92,26 @@ def register():
     if nickname in users.values():
         return render_template_string(REGISTER_TEMPLATE, ip=ip, error="Ник уже используется.")
 
+    # сохраняем ник
     users[ip] = nickname
     session['username'] = nickname
     session['room'] = None
-    session['is_admin'] = True
+
+    # админские права только для ника "Administrator"
+    if nickname == "Administrator":
+        session['is_admin'] = True
+    else:
+        session['is_admin'] = False
+
     return redirect(url_for('index'))
+
 
 @app.route('/admin')
 def admin_panel():
     ip = request.remote_addr or '0.0.0.0'
     if not session.get('is_admin'):
         return render_template('block.html', company="AnonChat", ip=ip, reason="Нет прав администратора")
-    return render_template('admin.html', username="Админ")
+    return render_template('admin.html', username=session.get('username', 'Админ'))
 
 # ---------- Socket.IO события ----------
 @socketio.on('connect')
@@ -263,6 +271,7 @@ def format_room_list():
 if __name__ == '__main__':
     # Для локальной разработки достаточно:
     socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
 
