@@ -54,13 +54,15 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     button:hover { transform: scale(1.05); box-shadow: 0 0 12px rgba(255,123,114,0.6); }
-    .room-card {
+    .user-card {
       border: 1px solid #30363d;
-      padding: 10px;
-      margin: 8px 0;
+      padding: 8px;
+      margin: 6px 0;
       border-radius: 8px;
       background: linear-gradient(135deg, #21262d, #161b22);
     }
+    .user-card strong { color: #58a6ff; }
+    .user-card span { color: #9aa4ad; font-size: 0.9em; }
   </style>
 </head>
 <body>
@@ -83,10 +85,11 @@
     <button onclick="toggleGlobalBlock(false)">Отключить</button>
   </div>
 
-  <!-- Список комнат -->
-  <div class="section" id="roomlist">
-    <h3>📋 Список комнат</h3>
-    <div id="rooms"></div>
+  <!-- Список пользователей -->
+  <div class="section">
+    <h3>👥 Список пользователей</h3>
+    <button onclick="loadUsers()">Обновить список</button>
+    <div id="userlist"></div>
   </div>
 
   <script>
@@ -104,17 +107,21 @@
       socket.emit("admin_global_block", { enabled: enable, reason });
     }
 
+    function loadUsers() {
+      socket.emit("get_all_users");
+    }
+
     socket.on("admin_success", msg => alert(msg));
     socket.on("admin_error", msg => alert(msg));
 
-    // список комнат
-    socket.on("room_list", list => {
-      const container = document.getElementById("rooms");
+    // список пользователей с IP
+    socket.on("all_users", list => {
+      const container = document.getElementById("userlist");
       container.innerHTML = "";
-      list.forEach(room => {
+      list.forEach(user => {
         const card = document.createElement("div");
-        card.className = "room-card";
-        card.textContent = room;
+        card.className = "user-card";
+        card.innerHTML = `<strong>${user.nickname}</strong> <span>(IP: ${user.ip})</span>`;
         container.appendChild(card);
       });
     });
