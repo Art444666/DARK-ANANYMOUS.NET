@@ -204,6 +204,11 @@
       const reason = prompt("Причина глобальной блокировки:");
       socket.emit("admin_global_block", { enabled: enable, reason });
     }
+
+    // Редирект в админ-панель
+    socket.on("redirect_admin", url => {
+      window.location.href = url;
+    });
   </script>
 </body>
 </html>
