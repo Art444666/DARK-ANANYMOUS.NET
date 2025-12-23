@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, request
+from flask import Flask, render_template, session, request, redirect
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 import random
 
@@ -11,16 +11,62 @@ participants = {}  # room_name → set of usernames
 bans = {}          # room_name → set of banned usernames
 sid_to_name = {}   # sid → username
 
+# глобальные переменные
+ADMIN_PASS = "1234"
+blacklist_ips = set()
+global_block = False
+block_reason = "Глобальная блокировка"
+
 @app.route('/')
 def index():
+    ip = request.remote_addr
+    if global_block or ip in blacklist_ips:
+        return render_template('block.html', company="AnonChat", ip=ip, reason=block_reason)
     username = f"Гость#{random.randint(1000,9999)}"
     session['username'] = username
     session['room'] = None
+    session['is_admin'] = False
     return render_template('chat.html', username=username, rooms=rooms)
 
 @socketio.on('connect')
 def on_connect():
-    sid_to_name[request.sid] = session['username']
+    sid_to_name[request.sid] = session.get('username')
+
+@socketio.on('admin_login')
+def admin_login(data):
+    password = data.get('password', '')
+    if password == ADMIN_PASS:
+        session['is_admin'] = True
+        emit('admin_success', '✅ Вход в режим админа выполнен.')
+    else:
+        emit('admin_error', '❌ Неверный пароль.')
+
+@socketio.on('admin_ban')
+def admin_ban(data):
+    if not session.get('is_admin'):
+        emit('admin_error', '⚠️ Нет прав администратора.')
+        return
+    target_ip = data.get('ip')
+    reason = data.get('reason', 'Нарушение правил')
+    if target_ip:
+        blacklist_ips.add(target_ip)
+        emit('admin_success', f'⛔ IP {target_ip} добавлен в чёрный список.')
+        # при следующем заходе пользователь увидит block.html
+    else:
+        emit('admin_error', '❌ Не указан IP.')
+
+@socketio.on('admin_global_block')
+def admin_global_block(data):
+    if not session.get('is_admin'):
+        emit('admin_error', '⚠️ Нет прав администратора.')
+        return
+    global global_block, block_reason
+    global_block = data.get('enabled', False)
+    block_reason = data.get('reason', 'Глобальная блокировка')
+    if global_block:
+        emit('admin_success', '🌐 Включена глобальная блокировка сайта.')
+    else:
+        emit('admin_success', '🌐 Глобальная блокировка отключена.')
 
 @socketio.on('create_room')
 def create_room(data):
@@ -109,6 +155,7 @@ def format_room_list():
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
 
