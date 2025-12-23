@@ -93,7 +93,7 @@ def register():
         return render_template_string(REGISTER_TEMPLATE, ip=ip, error="Ник уже используется.")
 
     users[ip] = nickname
-    session['username'] = admin
+    session['username'] = nickname
     session['room'] = None
     session['is_admin'] = True
     return redirect(url_for('index'))
@@ -263,6 +263,7 @@ def format_room_list():
 if __name__ == '__main__':
     # Для локальной разработки достаточно:
     socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
 
