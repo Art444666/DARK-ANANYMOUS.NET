@@ -165,7 +165,14 @@ def admin_user_list():
 
     user_list = [{"ip": ip, "nickname": nick} for ip, nick in users.items()]
     emit('admin_user_list', user_list, to=request.sid)
-
+@socketio.on('get_all_users')
+def get_all_users():
+    if not session.get('is_admin'):
+        emit('admin_error', '⚠️ Нет прав администратора.')
+        return
+    # users = {ip: nickname}
+    data = [{"ip": ip, "nickname": nick} for ip, nick in users.items()]
+    emit('all_users', data, to=request.sid)
 # ---------- Утилиты ----------
 def update_userlist(room):
     users_in_room = list(participants.get(room, []))
@@ -181,6 +188,7 @@ def format_room_list():
 # ---------- Запуск ----------
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=10000)
+
 
 
 
