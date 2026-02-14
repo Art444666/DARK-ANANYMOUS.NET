@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, send
 import random, time
 import os
 
-app = Flask(__name__, template_folder='.')
+app = Flask(__name__, template_folder='')
 app.config['SECRET_KEY'] = 'tg_secret_key_94488'
 # ИЗЮМИНКА: Увеличиваем буфер для передачи ФОТО (10МБ)
 socketio = SocketIO(app, max_http_buffer_size=10 * 1024 * 1024)
@@ -125,6 +125,7 @@ if __name__ == '__main__':
     
     # КРИТИЧЕСКИ ВАЖНО: host='0.0.0.0'
     socketio.run(app, host='0.0.0.0', port=port, debug=False)
+
 
 
 
