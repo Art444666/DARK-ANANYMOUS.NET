@@ -64,51 +64,60 @@ HTML = """
         
         /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
-    /* Сайдбар больше не перекрывает кнопки и поля ввода */
-    .sidebar { 
-        position: absolute; 
-        left: -100%; 
-        width: 100%; 
-        height: 100dvh; 
-        visibility: hidden; /* Важно: делает невидимый блок "прозрачным" для кликов */
-        z-index: 1000;
-        transition: left 0.3s ease, visibility 0.3s;
-    }
-
-    .sidebar.mobile-open { 
-        left: 0; 
-        visibility: visible; 
+    html, body {
+        height: 100dvh;
+        overflow: hidden;
     }
 
     .main { 
-        width: 100%; 
-        height: 100dvh; /* Высота ровно под экран телефона */
-        display: flex;
-        flex-direction: column;
-        overflow: hidden; /* Обрезает контент, который не влез по высоте */
-        position: relative;
+        display: flex !important;
+        width: 100vw !important; 
+        height: 100dvh !important; 
+        position: fixed;
+        top: 0; left: 0;
     }
 
-    /* Растягиваем элементы (сообщения/фото), чтобы заполняли ширину и обрезались */
-    .bubble { 
-        max-width: 90%; 
-        word-wrap: break-word;
+    /* Стили кнопки клавиатуры */
+    .mobile-kb-btn {
+        display: block; /* Показываем только на мобильных */
+        position: fixed;
+        right: 20px;
+        bottom: 80px; /* Над полем ввода */
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        z-index: 1001;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
-    /* Чтобы фото внутри чата не сплющивались, а обрезались сверху/снизу */
-    .bubble img, .main img {
-        width: 100%;
-        height: auto;
-        object-fit: cover; 
-    }
-
-    /* Фикс ввода: запрет зума и доступность */
-    input, textarea {
-        font-size: 16px !important;
-        position: relative;
-        z-index: 10;
-    }
+    /* Если хочешь, чтобы кнопка была внутри поля ввода — напиши, подправим */
 }
+
+/* Скрываем кнопку на компьютерах */
+@media (min-width: 769px) {
+    .mobile-kb-btn { display: none; }
+}
+
+<script>
+document.getElementById('kb-trigger').addEventListener('click', function() {
+    // Ищем поле ввода (замени .chat-input на свой класс, если он другой)
+    const input = document.querySelector('input[type="text"], textarea');
+    if (input) {
+        input.focus();
+        // Небольшой хак для некоторых браузеров, чтобы клавиатура точно вылезла
+        input.click(); 
+    }
+});
+</script>
+
+
+
+<!-- Кнопка вызова клавиатуры (только для мобильных) -->
+<button id="kb-trigger" class="mobile-kb-btn">⌨️</button>
 
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
@@ -366,6 +375,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
