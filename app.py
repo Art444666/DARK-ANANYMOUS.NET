@@ -121,7 +121,7 @@ HTML = """
     <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
     <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin-top:5px;" readonly>
     
-    <button class="btn-gear" onclick="toggleCustom()">Вид</button>
+    <button class="btn-gear" onclick="toggleCustom()">Настройка вида</button>
     <div id="customPanel" style="display:none; margin-top:15px; padding:15px; background:#242f3d; border-radius:12px;">
         <button onclick="setTheme('default')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#1c252f; color:white; cursor:pointer;">Оригинал</button>
         <button onclick="setTheme('gradient')" style="width:100%; padding:10px; border-radius:8px; border:none; background:linear-gradient(45deg, #5288c1, #2b5278); color:white; cursor:pointer;">Градиент</button>
@@ -133,7 +133,7 @@ HTML = """
     <div class="sidebar" id="sidebar">
         <div style="padding:15px; display:flex; gap:15px; align-items:center; border-bottom:1px solid #0e1621;">
             <div onclick="toggleMenu()" style="cursor:pointer; font-size:22px;">☰</div>
-            <b style="color:var(--acc); font-size:18px;">Telegram X</b>
+            <b style="color:var(--acc); font-size:18px;">F-TOP</b>
         </div>
         <div style="flex:1; overflow-y:auto;">
             <div class="room-item {{ 'active' if current == 'BOT' else '' }}" onclick="location.href='/?room=BOT'">
@@ -363,6 +363,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
