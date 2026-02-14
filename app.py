@@ -22,106 +22,61 @@ HTML = """
         :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --msg-in: #182533; --msg-out: #2b5278; --text: #f5f5f5; }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { height: 100%; margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        body, html { height: 100dvh; margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; width: 100vw; }
 
-        /* АНИМАЦИИ */
-        @keyframes msgSlide { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes blurIn { from { backdrop-filter: blur(0px); } to { backdrop-filter: blur(8px); } }
-
-        .app-wrap { display: flex; height: 100vh; position: relative; transition: 0.3s; }
+        .app-wrap { display: flex; height: 100dvh; position: relative; }
         
         /* SIDEBAR */
         .sidebar { width: 300px; background: var(--side); border-right: 1px solid #000; display: flex; flex-direction: column; z-index: 10; transition: 0.3s; }
-        .room-item { padding: 14px 18px; border-bottom: 1px solid #0e1621; cursor: pointer; display: flex; align-items: center; gap: 12px; position: relative; transition: 0.2s; }
-        .room-item:active { background: rgba(255,255,255,0.1); }
-        .room-item.active { background: var(--acc); }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(45deg, #5288c1, #2b5278); display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         
         /* MAIN CHAT */
-        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); z-index: 5; position: relative; transition: 0.3s; }
-        .main.blur-mode { filter: blur(5px); pointer-events: none; }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); z-index: 5; position: relative; height: 100%; }
         
         .header { background: var(--side); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; min-height: 60px; }
         
-        #chat { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background-image: url('https://www.transparenttextures.com'); }
-        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 16px; word-wrap: break-word; animation: msgSlide 0.3s ease-out; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        #chat { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 16px; word-wrap: break-word; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
         .mine { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 4px; }
         .other { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 4px; }
 
-        /* DRAWER (100% HIDDEN) */
-        #drawer { 
-            position: fixed; top: 0; left: 0; width: 280px; height: 100%; 
-            background: var(--side); z-index: 1000; padding: 30px 20px; 
-            box-shadow: 10px 0 30px #000; box-sizing: border-box;
-            transform: translateX(-110%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        #drawer.open { transform: translateX(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 999; backdrop-filter: blur(4px); animation: fadeIn 0.3s; }
-
         /* ИНПУТЫ */
-        .inp { background: #242f3d; border: none; padding: 12px 16px; border-radius: 25px; color: white; outline: none; font-size: 16px; width: 100%; }
         .input-bar { padding: 10px 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
-        
+        .inp { background: #242f3d; border: none; padding: 12px 16px; border-radius: 25px; color: white; outline: none; font-size: 16px; width: 100%; }
+
         /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
-    html, body {
-        height: 100dvh;
-        overflow: hidden;
-    }
+            .sidebar { position: absolute; left: -100%; visibility: hidden; }
+            
+            .main { 
+                display: flex !important;
+                width: 100vw !important; 
+                height: 100dvh !important; 
+                position: fixed;
+                top: 0; left: 0;
+            }
 
-    .main { 
-        display: flex !important;
-        width: 100vw !important; 
-        height: 100dvh !important; 
-        position: fixed;
-        top: 0; left: 0;
-    }
+            .mobile-kb-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                right: 20px;
+                bottom: 80px;
+                width: 55px;
+                height: 55px;
+                background: var(--acc);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                font-size: 24px;
+                z-index: 1001;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            }
+        }
 
-    /* Стили кнопки клавиатуры */
-    .mobile-kb-btn {
-        display: block; /* Показываем только на мобильных */
-        position: fixed;
-        right: 20px;
-        bottom: 80px; /* Над полем ввода */
-        width: 50px;
-        height: 50px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        font-size: 24px;
-        z-index: 1001;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    /* Если хочешь, чтобы кнопка была внутри поля ввода — напиши, подправим */
-}
-
-/* Скрываем кнопку на компьютерах */
-@media (min-width: 769px) {
-    .mobile-kb-btn { display: none; }
-}
-
-<script>
-document.getElementById('kb-trigger').addEventListener('click', function() {
-    // Ищем поле ввода (замени .chat-input на свой класс, если он другой)
-    const input = document.querySelector('input[type="text"], textarea');
-    if (input) {
-        input.focus();
-        // Небольшой хак для некоторых браузеров, чтобы клавиатура точно вылезла
-        input.click(); 
-    }
-});
-</script>
-
-
-
-<!-- Кнопка вызова клавиатуры (только для мобильных) -->
-<button id="kb-trigger" class="mobile-kb-btn">⌨️</button>
-
-
-        .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
-        .btn-gear:hover { transform: rotate(90deg); }
+        @media (min-width: 769px) {
+            .mobile-kb-btn { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -375,6 +330,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
