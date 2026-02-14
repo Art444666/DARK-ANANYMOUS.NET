@@ -116,9 +116,6 @@ document.getElementById('kb-trigger').addEventListener('click', function() {
 
 
 
-<!-- Кнопка вызова клавиатуры (только для мобильных) -->
-<button id="kb-trigger" class="mobile-kb-btn">⌨️</button>
-
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
         .btn-gear:hover { transform: rotate(90deg); }
@@ -133,7 +130,7 @@ document.getElementById('kb-trigger').addEventListener('click', function() {
     <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
     <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin-top:5px;" readonly>
     
-    <button class="btn-gear" onclick="toggleCustom()">⚙️ Вид чата</button>
+    <button class="btn-gear" onclick="toggleCustom()">⚙️</button>
     <div id="customPanel" style="display:none; margin-top:15px; padding:15px; background:#242f3d; border-radius:12px;">
         <button onclick="setTheme('default')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#1c252f; color:white; cursor:pointer;">Оригинал</button>
         <button onclick="setTheme('gradient')" style="width:100%; padding:10px; border-radius:8px; border:none; background:linear-gradient(45deg, #5288c1, #2b5278); color:white; cursor:pointer;">Градиент</button>
@@ -375,6 +372,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
