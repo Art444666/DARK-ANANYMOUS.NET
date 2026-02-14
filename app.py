@@ -64,11 +64,38 @@ HTML = """
         
         /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
-            .sidebar { position: absolute; left: -100%; width: 100%; height: 100%; }
-            .sidebar.mobile-open { left: 0; }
-            .main { width: 100%; }
-            .bubble { max-width: 90%; }
-        }
+    .sidebar { 
+        position: absolute; 
+        left: -100%; 
+        width: 100%; 
+        height: 100%; 
+        /* Добавляем visibility, чтобы сайдбар не блокировал клики, пока закрыт */
+        visibility: hidden; 
+        transition: left 0.3s ease, visibility 0.3s;
+        z-index: 1000; /* Чтобы был поверх всего при открытии */
+    }
+
+    .sidebar.mobile-open { 
+        left: 0; 
+        visibility: visible; 
+    }
+
+    .main { 
+        width: 100%; 
+        /* Убедимся, что контент доступен для кликов */
+        position: relative; 
+        z-index: 1;
+    }
+
+    .bubble { 
+        max-width: 90%; 
+    }
+
+    /* Исправление для полей ввода, чтобы они не увеличивались и нажимались */
+    input, textarea {
+        font-size: 16px !important; /* Убирает авто-зум на iPhone при клике */
+    }
+}
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
         .btn-gear:hover { transform: rotate(90deg); }
@@ -325,6 +352,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
