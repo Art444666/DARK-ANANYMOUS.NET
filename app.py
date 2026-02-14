@@ -1,21 +1,21 @@
 import os, time
 from flask import Flask, session, request, redirect, jsonify, render_template_string
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'tg_pro_94488'
-# Поддержка больших файлов (фото)
+app.config['SECRET_KEY'] = 'tg_ultra_94488'
+# Поддержка фото до 15МБ
 socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=15 * 1024 * 1024)
 
-# Глобальная база комнат (в оперативной памяти)
-rooms_db = {}
+# База данных в памяти
+rooms_db = {} # { name: { password: '...', owner: '...' } }
 
 HTML_LAYOUT = """
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Telegram Clone Elite</title>
+    <title>Telegram Clone Pro</title>
     <script src="https://cdn.socket.io"></script>
     <style>
         :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --msg-in: #182533; --msg-out: #2b5278; --text: #f5f5f5; }
@@ -23,7 +23,7 @@ HTML_LAYOUT = """
         
         .app-container { display: flex; height: 100vh; width: 100vw; position: relative; }
 
-        /* --- ВЫДВИЖНОЕ МЕНЮ (ПОЛНОСТЬЮ СКРЫТО) --- */
+        /* ВЫДВИЖНОЕ МЕНЮ (ПОЛНОСТЬЮ СКРЫТО) */
         #drawer {
             position: fixed; left: -320px; top: 0; width: 300px; height: 100%;
             background: var(--side); z-index: 1001; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -32,16 +32,16 @@ HTML_LAYOUT = """
         #drawer.open { left: 0; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 1000; backdrop-filter: blur(2px); }
 
-        /* --- САЙДБАР --- */
-        .sidebar { width: 320px; background: var(--side); border-right: 1px solid #080a0d; display: flex; flex-direction: column; }
-        .sb-header { padding: 15px; display: flex; align-items: center; gap: 15px; }
+        /* САЙДБАР */
+        .sidebar { width: 320px; background: var(--side); border-right: 1px solid #080a0d; display: flex; flex-direction: column; position: relative; }
+        .sb-header { padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #0e1621; }
         .rooms-list { flex: 1; overflow-y: auto; }
-        .room-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; border-radius: 8px; margin: 2px 8px; }
+        .room-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #0e1621; }
         .room-item:hover { background: rgba(255,255,255,0.05); }
         .room-item.active { background: var(--acc); }
         .avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-        /* --- ЧАТ --- */
+        /* ЧАТ */
         .chat-window { flex: 1; display: flex; flex-direction: column; background: #0e1621 url('https://www.transparenttextures.com'); }
         .chat-header { background: var(--side); padding: 10px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #000; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
@@ -54,8 +54,7 @@ HTML_LAYOUT = """
         .inp { flex: 1; background: #242f3d; border: none; padding: 10px 15px; border-radius: 20px; color: white; outline: none; }
         
         .btn-tg { background: none; border: none; color: var(--acc); cursor: pointer; font-weight: bold; font-size: 16px; }
-        .fab { position: absolute; bottom: 25px; left: 245px; width: 50px; height: 50px; border-radius: 50%; background: var(--acc); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10; transition: 0.2s; }
-        .fab:hover { transform: scale(1.1); }
+        .fab { position: absolute; bottom: 25px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--acc); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 10; }
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } }
     </style>
@@ -79,14 +78,14 @@ HTML_LAYOUT = """
     <div class="sidebar">
         <div class="sb-header">
             <div onclick="toggleMenu()" style="cursor:pointer; font-size: 22px;">☰</div>
-            <input type="text" class="inp" placeholder="Поиск чатов..." oninput="searchRooms(this.value)">
+            <b style="color:var(--acc)">Telegram</b>
         </div>
         <div class="rooms-list">
-            {% for r_name in rooms %}
-            <div class="room-item" onclick="joinRoom('{{ r_name }}')" data-name="{{ r_name }}">
-                <div class="avatar">{{ r_name[0] | upper }}</div>
+            {% for r_name, r_info in rooms.items() %}
+            <div class="room-item" id="item-{{ r_name }}" onclick="requestJoin('{{ r_name }}', {{ 'true' if r_info.password else 'false' }})">
+                <div class="avatar">{{ r_name[:1] | upper }}</div>
                 <div style="flex:1">
-                    <div style="font-weight: bold;">{{ r_name }}</div>
+                    <div style="font-weight: bold;">{{ r_name }} {{ '🔐' if r_info.password else '' }}</div>
                     <div style="font-size: 12px; color: #8e959b;">нажмите, чтобы войти</div>
                 </div>
             </div>
@@ -116,39 +115,52 @@ HTML_LAYOUT = """
     let currentRoom = "";
 
     function toggleMenu() {
-        const d = document.getElementById('drawer');
-        const o = document.getElementById('overlay');
-        d.classList.toggle('open');
-        o.style.display = d.classList.contains('open') ? 'block' : 'none';
+        document.getElementById('drawer').classList.toggle('open');
+        document.getElementById('overlay').style.display = 
+            document.getElementById('drawer').classList.contains('open') ? 'block' : 'none';
     }
 
     async function createRoom() {
-        const name = prompt("Название новой беседы:");
+        const name = prompt("Название беседы:");
         if(!name) return;
+        const pass = prompt("Пароль (пусто, если не нужен):");
+        
         const res = await fetch('/create_room', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name})
+            body: JSON.stringify({name: name, password: pass})
         });
         if(res.ok) location.reload();
+        else alert("Ошибка при создании");
     }
 
-    function joinRoom(name) {
-        currentRoom = name;
-        document.getElementById("h-name").innerText = name;
-        document.getElementById("h-av").innerText = name[0].toUpperCase();
-        document.getElementById("inputBox").style.display = "flex";
-        document.getElementById("chat").innerHTML = "";
-        
-        document.querySelectorAll('.room-item').forEach(i => i.classList.remove('active'));
-        document.querySelector(`[data-name="${name}"]`).classList.add('active');
-        
-        socket.emit('join', {room: name});
+    function requestJoin(name, isPrivate) {
+        let pass = "";
+        if(isPrivate) {
+            pass = prompt("Введите пароль для входа:");
+            if(pass === null) return;
+        }
+        socket.emit('join', {room: name, password: pass});
     }
+
+    socket.on('join_status', (data) => {
+        if(data.success) {
+            currentRoom = data.room;
+            document.getElementById("h-name").innerText = data.room;
+            document.getElementById("h-av").innerText = data.room.substring(0,1).toUpperCase();
+            document.getElementById("inputBox").style.display = "flex";
+            document.getElementById("chat").innerHTML = "";
+            
+            document.querySelectorAll('.room-item').forEach(i => i.classList.remove('active'));
+            document.getElementById("item-" + data.room).classList.add('active');
+        } else {
+            alert(data.message);
+        }
+    });
 
     function send() {
         const i = document.getElementById("msg");
-        if(i.value.trim()) {
+        if(i.value.trim() && currentRoom) {
             socket.emit('message', {room: currentRoom, msg: i.value});
             i.value = "";
         }
@@ -175,15 +187,8 @@ HTML_LAYOUT = """
         chat.scrollTop = chat.scrollHeight;
     });
 
-    function searchRooms(val) {
-        document.querySelectorAll(".room-item").forEach(i => {
-            i.style.display = i.dataset.name.toLowerCase().includes(val.toLowerCase()) ? "flex" : "none";
-        });
-    }
-
     function adminLogin() {
-        const p = prompt("Введите пароль админа:");
-        if(p === "94488") alert("Режим администратора активирован");
+        if(prompt("Пароль админа:") === "94488") alert("Режим админа!");
     }
 </script>
 </body>
@@ -200,7 +205,7 @@ def login():
     if request.method == 'POST':
         session['user'] = request.form.get('nick')
         return redirect('/')
-    return '<body style="background:#0e1621; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;"><form method="POST"><h2>Вход в чат</h2><input name="nick" required placeholder="Ваш ник" style="padding:10px; border-radius:8px; border:none;"><br><button style="margin-top:10px; background:#5288c1; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Войти</button></form></body>'
+    return '<body style="background:#0e1621; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;"><form method="POST"><h2>Вход в Telegram Beta</h2><input name="nick" required placeholder="Ваш ник" style="padding:10px; border-radius:8px; border:none;"><br><button style="margin-top:10px; background:#5288c1; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Войти</button></form></body>'
 
 @app.route('/change_nick', methods=['POST'])
 def change_nick():
@@ -212,22 +217,46 @@ def change_nick():
 def create():
     data = request.json
     name = data.get('name', '').strip()
+    password = data.get('password', '').strip()
     if name and name not in rooms_db:
-        rooms_db[name] = {'owner': session.get('user')}
+        rooms_db[name] = {'owner': session.get('user'), 'password': password}
         return jsonify(success=True)
     return jsonify(success=False), 400
 
 @socketio.on('join')
 def on_join(data):
-    join_room(data['room'])
+    room = data.get('room')
+    password = data.get('password')
+    
+    if room in rooms_db:
+        # Проверка пароля
+        correct_pass = rooms_db[room]['password']
+        if correct_pass and correct_pass != password:
+            emit('join_status', {'success': False, 'message': '❌ Неверный пароль!'})
+            return
+        
+        # Переключение комнат
+        old_room = session.get('current_room')
+        if old_room: leave_room(old_room)
+        
+        join_room(room)
+        session['current_room'] = room
+        emit('join_status', {'success': True, 'room': room})
+    else:
+        emit('join_status', {'success': False, 'message': '❌ Комната не найдена'})
 
 @socketio.on('message')
 def handle_msg(data):
-    emit('chat_msg', {'user': session['user'], 'msg': data['msg']}, to=data['room'])
+    room = data.get('room')
+    msg = data.get('msg')
+    if room == session.get('current_room'):
+        emit('chat_msg', {'user': session['user'], 'msg': msg}, to=room)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, host='0.0.0.0', port=port)
+
+
 
 
 
