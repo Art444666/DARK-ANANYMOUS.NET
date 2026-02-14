@@ -64,15 +64,15 @@ HTML = """
         
         /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
+    /* Сайдбар больше не перекрывает кнопки и поля ввода */
     .sidebar { 
         position: absolute; 
         left: -100%; 
         width: 100%; 
-        height: 100%; 
-        /* Добавляем visibility, чтобы сайдбар не блокировал клики, пока закрыт */
-        visibility: hidden; 
+        height: 100dvh; 
+        visibility: hidden; /* Важно: делает невидимый блок "прозрачным" для кликов */
+        z-index: 1000;
         transition: left 0.3s ease, visibility 0.3s;
-        z-index: 1000; /* Чтобы был поверх всего при открытии */
     }
 
     .sidebar.mobile-open { 
@@ -82,20 +82,34 @@ HTML = """
 
     .main { 
         width: 100%; 
-        /* Убедимся, что контент доступен для кликов */
-        position: relative; 
-        z-index: 1;
+        height: 100dvh; /* Высота ровно под экран телефона */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Обрезает контент, который не влез по высоте */
+        position: relative;
     }
 
+    /* Растягиваем элементы (сообщения/фото), чтобы заполняли ширину и обрезались */
     .bubble { 
         max-width: 90%; 
+        word-wrap: break-word;
     }
 
-    /* Исправление для полей ввода, чтобы они не увеличивались и нажимались */
+    /* Чтобы фото внутри чата не сплющивались, а обрезались сверху/снизу */
+    .bubble img, .main img {
+        width: 100%;
+        height: auto;
+        object-fit: cover; 
+    }
+
+    /* Фикс ввода: запрет зума и доступность */
     input, textarea {
-        font-size: 16px !important; /* Убирает авто-зум на iPhone при клике */
+        font-size: 16px !important;
+        position: relative;
+        z-index: 10;
     }
 }
+
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
         .btn-gear:hover { transform: rotate(90deg); }
@@ -352,6 +366,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
