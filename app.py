@@ -1,181 +1,183 @@
-import os, time
+import os, time, eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, session, request, redirect, jsonify, render_template_string
 from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'tg_fixed_94488'
-# Настройки для стабильной работы на Render
-socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=20 * 1024 * 1024)
+app.config['SECRET_KEY'] = 'tg_ultra_94488_safe'
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*", max_http_buffer_size=25*1024*1024)
 
-# Глобальная база (сохраняется до перезапуска сервера)
-rooms_db = {} 
+# --- РАЗДЕЛЬНЫЕ ХРАНИЛИЩА ---
+rooms_db = {}     # { name: {owner, members: []} }
+messages_db = {}  # { name: [ {user, msg, type} ] }
+users_db = {}     # { username: {sid, invites: []} }
 
 HTML_LAYOUT = """
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Telegram Elite Fixed</title>
+    <title>Telegram Private Pro</title>
     <script src="https://cdn.socket.io"></script>
     <style>
         :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --msg-in: #182533; --msg-out: #2b5278; --text: #f5f5f5; }
-        body, html { height: 100%; margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-        .app-wrap { display: flex; height: 100vh; width: 100vw; position: relative; }
-
-        /* ВЫДВИЖНОЕ МЕНЮ (ПОЛНОСТЬЮ СКРЫТО) */
-        #drawer { 
-            position: fixed; left: -320px; top: 0; width: 300px; height: 100%; 
-            background: var(--side); z-index: 2000; transition: 0.3s; padding: 25px; 
-            box-sizing: border-box; box-shadow: 10px 0 20px #000; 
-        }
-        #drawer.open { transform: translateX(320px); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
-
-        /* САЙДБАР */
-        .sidebar { width: 320px; background: var(--side); border-right: 1px solid #080a0d; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sb-header { padding: 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #0e1621; }
-        .rooms-list { flex: 1; overflow-y: auto; }
-        .room-item { padding: 12px 15px; border-bottom: 1px solid #0e1621; cursor: pointer; display: flex; align-items: center; gap: 12px; }
-        .room-item:hover { background: rgba(255,255,255,0.05); }
-        .room-item.active { background: var(--acc); }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
-        /* ЧАТ */
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #0e1621; position: relative; }
-        .chat-header { background: var(--side); padding: 15px 20px; font-weight: bold; border-bottom: 1px solid #000; display: flex; justify-content: space-between; align-items: center; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 75%; padding: 10px; border-radius: 12px; animation: slideUp 0.2s; word-wrap: break-word; }
-        .mine { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
-        .other { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 2px; }
-
-        /* ИНПУТЫ */
-        .input-bar { padding: 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
-        .inp { flex: 1; background: #242f3d; border: none; padding: 10px 15px; border-radius: 20px; color: white; outline: none; }
-        .btn-tg { background: none; border: none; color: var(--acc); cursor: pointer; font-weight: bold; font-size: 22px; }
+        body, html { height: 100%; margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        .app { display: flex; height: 100vh; }
         
-        .fab { position: absolute; bottom: 20px; left: 250px; width: 50px; height: 50px; border-radius: 50%; background: var(--acc); border: none; color: white; font-size: 24px; cursor: pointer; z-index: 100; box-shadow: 0 4px 10px #000; }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } }
+        /* SIDEBAR */
+        .sidebar { width: 300px; background: var(--side); border-right: 1px solid #000; display: flex; flex-direction: column; }
+        .room-item { padding: 12px 15px; border-bottom: 1px solid #0e1621; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .room-item.active { background: var(--acc); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #4b7db1; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        /* CHAT */
+        .main { flex: 1; display: flex; flex-direction: column; background: #0e1621; }
+        .header { background: var(--side); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 70%; padding: 10px; border-radius: 12px; }
+        .mine { align-self: flex-end; background: var(--msg-out); }
+        .other { align-self: flex-start; background: var(--msg-in); }
+        
+        /* DRAWER */
+        #drawer { position: fixed; left: -310px; top: 0; width: 300px; height: 100%; background: var(--side); transition: 0.3s; z-index: 1000; padding: 20px; box-shadow: 5px 0 15px #000; }
+        #drawer.open { left: 0; }
+        
+        .input-bar { padding: 15px; background: var(--side); display: flex; gap: 10px; }
+        .inp { flex: 1; background: #242f3d; border: none; padding: 10px; border-radius: 20px; color: white; outline: none; }
+        .btn-acc { color: var(--acc); cursor: pointer; background: none; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 <div id="drawer">
-    <h2 style="color: var(--acc); margin-top: 0;">Настройки</h2>
+    <h3>Настройки</h3>
     <form action="/change_nick" method="POST">
-        <label style="font-size: 12px; color: gray;">ВАШ НИКНЕЙМ</label>
-        <input name="new_nick" class="inp" value="{{ username }}" style="width:100%; margin-top: 5px;">
-        <button type="submit" style="width:100%; margin-top:15px; background:var(--acc); border:none; color:white; padding:10px; border-radius:8px; cursor:pointer;">Сохранить</button>
+        <input name="new_nick" value="{{ username }}" class="inp" style="width:100%">
+        <button type="submit" style="width:100%; margin-top:10px; background:var(--acc); border:none; color:white; padding:10px; border-radius:8px;">Сохранить</button>
     </form>
-    <hr style="border: 0.5px solid #242f3d; margin: 30px 0;">
-    <button onclick="adminLogin()" style="color: #ff6b6b; background:none; border:none; cursor:pointer;">🔑 Админ-панель</button>
+    <button onclick="toggleMenu()" style="margin-top:20px; background:none; border:none; color:gray;">Закрыть</button>
 </div>
 
-<div class="app-wrap">
+<div class="app">
     <div class="sidebar">
-        <div class="sb-header">
-            <div onclick="toggleMenu()" style="cursor:pointer; font-size: 22px;">☰</div>
-            <b style="color: var(--acc); font-size: 18px;">Telegram</b>
+        <div style="padding:15px; display:flex; gap:10px; align-items:center;">
+            <div onclick="toggleMenu()" style="cursor:pointer">☰</div>
+            <b>Telegram Private</b>
         </div>
-        <div class="rooms-list">
-            {% for r_name, r_info in rooms.items() %}
-            <div class="room-item {{ 'active' if r_name == current_room else '' }}" 
-                 onclick="enterRoom('{{ r_name }}', {{ 'true' if r_info.password else 'false' }})">
+        <div style="flex:1; overflow-y:auto;">
+            <div class="room-item {{ 'active' if current == 'BOT' else '' }}" onclick="location.href='/?room=BOT'">
+                <div class="avatar">🤖</div>
+                <div><b>Бот-Ассистент</b><br><small>Уведомления</small></div>
+            </div>
+            {% for r_name in my_rooms %}
+            <div class="room-item {{ 'active' if r_name == current else '' }}" onclick="location.href='/?room={{ r_name }}'">
                 <div class="avatar">{{ r_name[:1].upper() }}</div>
-                <div style="flex:1">
-                    <div style="font-weight: 600;">{{ r_name }} {{ '🔐' if r_info.password else '' }}</div>
-                    <div style="font-size: 12px; color: #8e959b;">нажмите, чтобы войти</div>
-                </div>
+                <div><b>{{ r_name }}</b></div>
             </div>
             {% endfor %}
         </div>
-        <button class="fab" onclick="createRoom()">+</button>
+        <button onclick="createRoom()" style="margin:10px; padding:10px; background:var(--acc); border:none; color:white; border-radius:8px;">+ Новая беседа</button>
     </div>
 
-    <div class="chat-main">
-        {% if current_room %}
-        <div class="chat-header">
-            <span>{{ current_room }}</span>
-            <button onclick="inviteUser()" style="background:var(--acc); border:none; color:white; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">Пригласить +</button>
+    <div class="main">
+        {% if current %}
+        <div class="header">
+            <b>{{ '🤖 Бот' if current == 'BOT' else current }}</b>
+            <div>
+                {% if current != 'BOT' %}
+                <button onclick="showMembers()" class="btn-acc">👥 Участники</button>
+                <button onclick="inviteFriend()" class="btn-acc" style="margin-left:10px;">➕ Пригласить</button>
+                {% endif %}
+            </div>
         </div>
-        <div id="messages"></div>
+        <div id="chat">
+            {% if current == 'BOT' %}
+                {% for inv in my_invites %}
+                <div class="bubble other">
+                    📩 <b>{{ inv.from }}</b> пригласил тебя в <b>{{ inv.room }}</b><br><br>
+                    <button onclick="acceptInvite('{{ inv.room }}')" style="background:var(--acc); border:none; color:white; padding:5px; border-radius:5px;">Принять</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                {% for m in history %}
+                <div class="bubble {{ 'mine' if m.user == username else 'other' }}">
+                    <small style="color:var(--acc)">{{ m.user }}</small><br>
+                    {% if m.type == 'img' %}
+                    <img src="{{ m.msg }}" style="max-width:100%; border-radius:8px;">
+                    {% else %}
+                    {{ m.msg }}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% if current != 'BOT' %}
         <div class="input-bar">
-            <input type="text" id="msgInp" class="inp" placeholder="Написать сообщение..." onkeypress="if(event.key==='Enter') sendMsg()">
-            <button onclick="sendMsg()" class="btn-tg">➤</button>
+            <input type="file" id="img" hidden onchange="sendPhoto(this)">
+            <button onclick="document.getElementById('img').click()" class="btn-acc">📎</button>
+            <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()">
+            <button onclick="sendText()" class="btn-acc">➤</button>
         </div>
-        {% else %}
-        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:gray;">Выберите чат из списка слева</div>
+        {% endif %}
         {% endif %}
     </div>
 </div>
 
 <script>
     const socket = io();
-    const myName = "{{ username }}";
-    const activeRoom = "{{ current_room }}";
+    const me = "{{ username }}";
+    const room = "{{ current }}";
 
-    // Принудительное подключение к комнате
-    if(activeRoom) {
-        socket.emit('join_forced', {room: activeRoom});
-    }
+    if(room && room !== 'BOT') { socket.emit('join', {room: room}); }
 
-    function toggleMenu() {
-        const d = document.getElementById('drawer');
-        const o = document.getElementById('overlay');
-        d.classList.toggle('open');
-        o.style.display = d.classList.contains('open') ? 'block' : 'none';
-    }
+    function toggleMenu() { document.getElementById('drawer').classList.toggle('open'); }
 
-    function enterRoom(name, isPrivate) {
-        let pass = isPrivate ? prompt("Введите пароль:") : "";
-        if(isPrivate && pass === null) return;
-        window.location.href = "/?room=" + encodeURIComponent(name) + "&pw=" + encodeURIComponent(pass);
-    }
-
-    async function createRoom() {
-        const n = prompt("Название чата:");
-        if(!n) return;
-        const p = prompt("Пароль (пусто для открытого):");
-        const res = await fetch('/create_room', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: n, password: p})
-        });
-        if(res.ok) window.location.href = "/?room=" + encodeURIComponent(n) + "&pw=" + encodeURIComponent(p);
-    }
-
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ОТПРАВКИ
-    function sendMsg() {
-        const i = document.getElementById("msgInp");
-        if(i.value.trim() && activeRoom) {
-            socket.emit('message_event', {
-                room: activeRoom,
-                msg: i.value,
-                user: myName
-            });
+    function sendText() {
+        const i = document.getElementById("msg");
+        if(i.value.trim()) {
+            socket.emit('msg', {room: room, user: me, msg: i.value, type: 'text'});
             i.value = "";
         }
     }
 
-    socket.on('chat_update', (data) => {
-        const box = document.getElementById("messages");
-        if(!box) return;
+    function sendPhoto(input) {
+        const reader = new FileReader();
+        reader.onload = (e) => socket.emit('msg', {room: room, user: me, msg: e.target.result, type: 'img'});
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function createRoom() {
+        const n = prompt("Название приватной комнаты:");
+        if(n) fetch('/create', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:n})})
+              .then(() => location.href='/?room='+n);
+    }
+
+    function inviteFriend() {
+        const who = prompt("Ник друга:");
+        if(who) socket.emit('invite', {to: who, room: room, from: me});
+    }
+
+    function acceptInvite(r) {
+        fetch('/accept', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({room:r})})
+        .then(() => location.href='/?room='+r);
+    }
+
+    function showMembers() {
+        fetch('/members?room='+room).then(r=>r.json()).then(data => alert("Участники: " + data.join(", ")));
+    }
+
+    socket.on('update', (data) => {
+        const box = document.getElementById("chat");
         const div = document.createElement("div");
-        div.className = "msg " + (data.user === myName ? "mine" : "other");
-        div.innerHTML = `<small style="color:var(--acc)">${data.user}</small><br>${data.msg}`;
+        div.className = "bubble " + (data.user === me ? "mine" : "other");
+        if(data.type === 'img') div.innerHTML = `<small>${data.user}</small><br><img src="${data.msg}" style="max-width:100%; border-radius:8px;">`;
+        else div.innerHTML = `<small>${data.user}</small><br>${data.msg}`;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
     });
 
-    function adminLogin() {
-        if(prompt("Пароль:") === "94488") alert("Админ-режим активен!");
-    }
-
-    function inviteUser() {
-        const target = prompt("Ник пользователя для приглашения:");
-        if(target) alert("Приглашение отправлено пользователю " + target);
-    }
+    socket.on('notify', () => { if(room === 'BOT') location.reload(); });
 </script>
 </body>
 </html>
@@ -184,53 +186,80 @@ HTML_LAYOUT = """
 @app.route('/')
 def index():
     if 'user' not in session: return redirect('/login')
+    user = session['user']
+    room = request.args.get('room')
     
-    room_name = request.args.get('room')
-    password = request.args.get('pw', '')
+    # Загружаем комнаты, где юзер состоит
+    my_rooms = [n for n, v in rooms_db.items() if user in v['members']]
+    
+    # История сообщений
+    history = messages_db.get(room, [])
+    
+    # Приглашения для бота
+    my_invites = users_db.get(user, {}).get('invites', [])
 
-    if room_name in rooms_db:
-        if rooms_db[room_name]['password'] and rooms_db[r_name]['password'] != password:
-            return "<script>alert('Неверный пароль!'); window.location.href='/';</script>"
-    else: room_name = None
-
-    return render_template_string(HTML_LAYOUT, 
-                                username=session['user'], 
-                                rooms=rooms_db, 
-                                current_room=room_name)
+    return render_template_string(HTML_LAYOUT, username=user, my_rooms=my_rooms, 
+                                 current=room, history=history, my_invites=my_invites)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        session['user'] = request.form.get('nick')
+        u = request.form.get('nick')
+        session['user'] = u
+        if u not in users_db: users_db[u] = {'invites': []}
         return redirect('/')
-    return '<body style="background:#0e1621;color:white;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;"><form method="POST"><input name="nick" required placeholder="Ваш ник" style="padding:10px;border-radius:8px;border:none;"><br><button style="margin-top:10px;background:#5288c1;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;">Войти</button></form></body>'
+    return '<body style="background:#0e1621;color:white;display:flex;justify-content:center;align-items:center;height:100vh;"><form method="POST"><input name="nick" placeholder="Ник" required><button>Войти</button></form></body>'
 
-@app.route('/create_room', methods=['POST'])
+@app.route('/create', methods=['POST'])
 def create():
-    data = request.json
-    name = data.get('name', '').strip()
-    if name:
-        rooms_db[name] = {'password': data.get('password', ''), 'owner': session.get('user')}
-        return jsonify(success=True)
-    return jsonify(success=False), 400
+    name = request.json.get('name')
+    if name not in rooms_db:
+        rooms_db[name] = {'owner': session['user'], 'members': [session['user']]}
+        messages_db[name] = []
+    return "ok"
+
+@app.route('/accept', methods=['POST'])
+def accept():
+    room = request.json.get('room')
+    user = session['user']
+    if room in rooms_db and user not in rooms_db[room]['members']:
+        rooms_db[room]['members'].append(user)
+        # Удаляем инвайт после принятия
+        users_db[user]['invites'] = [i for i in users_db[user]['invites'] if i['room'] != room]
+    return "ok"
+
+@app.route('/members')
+def get_members():
+    room = request.args.get('room')
+    return jsonify(rooms_db.get(room, {}).get('members', []))
 
 @app.route('/change_nick', methods=['POST'])
 def change_nick():
-    new = request.form.get('new_nick')
-    if new: session['user'] = new
+    session['user'] = request.form.get('new_nick')
     return redirect('/')
 
-@socketio.on('join_forced')
+@socketio.on('join')
 def on_join(data):
     join_room(data['room'])
 
-@socketio.on('message_event')
+@socketio.on('msg')
 def handle_msg(data):
-    # Принудительная рассылка во все сокеты комнаты
-    emit('chat_update', {'user': data['user'], 'msg': data['msg']}, to=data['room'])
+    # Сохраняем в историю (хранилище сообщений)
+    if data['room'] in messages_db:
+        messages_db[data['room']].append({'user': data['user'], 'msg': data['msg'], 'type': data['type']})
+    emit('update', data, to=data['room'])
+
+@socketio.on('invite')
+def handle_invite(data):
+    target = data['to']
+    if target in users_db:
+        users_db[target]['invites'].append({'from': data['from'], 'room': data['room']})
+        emit('notify', to=target) # Сигнал боту цели
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
+
 
 
 
