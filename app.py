@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room, send
 import random, time
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tg_secret_key_94488'
@@ -119,7 +120,12 @@ def on_disc():
         del users[sid]
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    # Render передает порт в переменную окружения PORT
+    port = int(os.environ.get('PORT', 5000))
+    
+    # КРИТИЧЕСКИ ВАЖНО: host='0.0.0.0'
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+
 
 
 
