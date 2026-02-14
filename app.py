@@ -64,61 +64,52 @@ HTML = """
         
         /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
-    html, body {
-        height: 100dvh;
-        overflow: hidden;
+    .sidebar { 
+        display: none; /* Скрываем боковую панель совсем */
     }
 
     .main { 
         display: flex !important;
+        flex-direction: column; /* Элементы идут сверху вниз */
         width: 100vw !important; 
-        height: 100dvh !important; 
+        height: 100dvh !important; /* Высота ровно под экран */
         position: fixed;
-        top: 0; left: 0;
+        top: 0; 
+        left: 0;
     }
 
-    /* Стили кнопки клавиатуры */
+    #chat {
+        flex: 1; /* Чат забирает всё свободное место сверху */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .input-bar {
+        position: relative; /* Панель всегда идет сразу после чата */
+        background: var(--side);
+        padding: 10px 15px;
+        /* Учет безопасной зоны внизу (для iPhone с полоской) */
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        border-top: 1px solid #000;
+        width: 100%;
+        display: flex;
+        z-index: 10;
+    }
+
     .mobile-kb-btn {
-        display: block; /* Показываем только на мобильных */
+        display: flex;
         position: fixed;
         right: 20px;
-        bottom: 80px; /* Над полем ввода */
-        width: 50px;
-        height: 50px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        font-size: 24px;
+        bottom: 100px; /* Чуть выше панели ввода */
         z-index: 1001;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-
-    /* Если хочешь, чтобы кнопка была внутри поля ввода — напиши, подправим */
 }
 
-/* Скрываем кнопку на компьютерах */
-@media (min-width: 769px) {
-    .mobile-kb-btn { display: none; }
-}
-
-<script>
-document.getElementById('kb-trigger').addEventListener('click', function() {
-    // Ищем поле ввода (замени .chat-input на свой класс, если он другой)
-    const input = document.querySelector('input[type="text"], textarea');
-    if (input) {
-        input.focus();
-        // Небольшой хак для некоторых браузеров, чтобы клавиатура точно вылезла
-        input.click(); 
-    }
-});
-</script>
 
 
 
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
-        .btn-gear:hover { transform: rotate(90deg); }
     </style>
 </head>
 <body>
@@ -130,7 +121,7 @@ document.getElementById('kb-trigger').addEventListener('click', function() {
     <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
     <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin-top:5px;" readonly>
     
-    <button class="btn-gear" onclick="toggleCustom()">⚙️</button>
+    <button class="btn-gear" onclick="toggleCustom()">Вид</button>
     <div id="customPanel" style="display:none; margin-top:15px; padding:15px; background:#242f3d; border-radius:12px;">
         <button onclick="setTheme('default')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#1c252f; color:white; cursor:pointer;">Оригинал</button>
         <button onclick="setTheme('gradient')" style="width:100%; padding:10px; border-radius:8px; border:none; background:linear-gradient(45deg, #5288c1, #2b5278); color:white; cursor:pointer;">Градиент</button>
@@ -372,6 +363,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
