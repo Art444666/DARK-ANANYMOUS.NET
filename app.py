@@ -1,188 +1,200 @@
-import os, random
-from flask import Flask, session, request, redirect, url_for, render_template_string
-from flask_socketio import SocketIO, emit, join_room, leave_room
+import os
+from flask import Flask, session, request, redirect, jsonify, render_template_string
+from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'tg_94488'
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'tg_94488_ultra'
+socketio = SocketIO(app, cors_allowed_origins="*", max_http_buffer_size=10*1024*1024)
 
-# --- КОНСТРУКТОР ДИЗАЙНА (HTML + CSS) ---
-INDEX_HTML = """
+# Глобальное хранилище (сохраняется пока сервер не перезагружен)
+# Для вечного хранения на Render нужна БД, но словарь держит данные сессии билда.
+rooms_db = {} 
+
+HTML_LAYOUT = """
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Telegram Anonymous</title>
+    <title>Telegram X Beta</title>
     <script src="https://cdn.socket.io"></script>
     <style>
-        :root {
-            --bg-dark: #0e1621; --bg-side: #17212b; --accent: #5288c1;
-            --text: #f5f5f5; --msg-out: #2b5278; --msg-in: #182533;
+        :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --msg: #182533; --my: #2b5278; }
+        body, html { height: 100%; margin: 0; font-family: sans-serif; background: var(--bg); color: white; overflow: hidden; }
+        
+        .app { display: flex; height: 100vh; position: relative; }
+
+        /* ВЫДВИЖНОЕ МЕНЮ */
+        #drawer {
+            position: fixed; left: -300px; top: 0; width: 280px; height: 100%;
+            background: var(--side); z-index: 1000; transition: 0.3s;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5); padding: 20px;
         }
-        body, html { height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto; background: var(--bg-dark); color: var(--text); overflow: hidden; }
+        #drawer.open { left: 0; }
+        .overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+            display: none; z-index: 900; 
+        }
 
-        /* ОСНОВНАЯ СЕТКА */
-        .app-container { display: flex; height: 100vh; width: 100vw; }
+        /* САЙДБАР */
+        .side { width: 300px; background: var(--side); border-right: 1px solid #000; display: flex; flex-direction: column; }
+        .room-item { padding: 15px; border-bottom: 1px solid #0e1621; cursor: pointer; transition: 0.2s; }
+        .room-item:hover { background: #232e3c; }
 
-        /* САЙДБАР (ЛЕВО) */
-        .sidebar { width: 300px; background: var(--bg-side); border-right: 1px solid #080a0d; display: flex; flex-direction: column; position: relative; }
-        .sidebar-header { padding: 10px 15px; display: flex; align-items: center; gap: 10px; }
-        .search-input { flex: 1; background: #242f3d; border: none; border-radius: 10px; padding: 8px 12px; color: white; outline: none; font-size: 14px; }
+        /* ЧАТ */
+        .main { flex: 1; display: flex; flex-direction: column; background: #0e1621; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { max-width: 80%; padding: 10px; border-radius: 12px; }
+        .my { align-self: flex-end; background: var(--my); }
+        .other { align-self: flex-start; background: var(--msg); }
+
+        .input-area { padding: 15px; background: var(--side); display: flex; gap: 10px; }
+        .inp { flex: 1; background: #242f3d; border: none; padding: 10px; border-radius: 10px; color: white; outline: none; }
         
-        /* СПИСОК ЧАТОВ */
-        .chats-list { flex: 1; overflow-y: auto; }
-        .chat-item { padding: 10px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
-        .chat-item:hover { background: #232e3c; }
-        .chat-item.active { background: var(--accent); }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #5288c1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
-
-        /* ОКНО ЧАТА (ПРАВО) */
-        .chat-window { flex: 1; display: flex; flex-direction: column; background: url('https://www.transparenttextures.com'); background-color: var(--bg-dark); }
-        .chat-header { background: var(--bg-side); padding: 10px 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-        
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        
-        /* ПУЗЫРИ СООБЩЕНИЙ */
-        .message { max-width: 70%; padding: 8px 12px; border-radius: 12px; font-size: 15px; line-height: 1.4; position: relative; animation: slideUp 0.2s ease; }
-        .message.mine { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
-        .message.other { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 2px; }
-        
-        /* ПАНЕЛЬ ВВОДА */
-        .input-panel { padding: 10px 20px; background: var(--bg-side); display: flex; align-items: center; gap: 12px; }
-        .msg-input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 15px; }
-        .btn-send { color: var(--accent); cursor: pointer; font-weight: bold; background: none; border: none; font-size: 18px; }
-
-        /* КНОПКА СОЗДАНИЯ */
-        .fab { position: absolute; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--accent); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); transition: 0.3s; }
-        .fab:hover { transform: scale(1.1) rotate(90deg); }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn { background: var(--acc); border: none; color: white; padding: 10px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div style="cursor:pointer; font-size: 20px;" onclick="alert('Меню Настроек')">☰</div>
-            <input type="text" class="search-input" placeholder="Поиск" oninput="filterRooms(this.value)">
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<!-- ВЫДВИЖНОЕ МЕНЮ НАСТРОЕК -->
+<div id="drawer">
+    <h3>Настройки</h3>
+    <form action="/change_nick" method="POST">
+        <label style="font-size: 12px; color: var(--acc)">ВАШ НИК</label><br>
+        <input name="new_nick" class="inp" style="width: 90%; margin-top: 5px;" value="{{ username }}">
+        <button type="submit" class="btn" style="margin-top: 10px; width: 100%;">Сохранить</button>
+    </form>
+    <hr style="border: 0.5px solid #242f3d; margin: 20px 0;">
+    <button onclick="adminLogin()" class="btn" style="background: #ff6b6b; width: 100%;">Админ-панель</button>
+</div>
+
+<div class="app">
+    <div class="side">
+        <div style="padding: 15px; display: flex; align-items: center; gap: 10px;">
+            <div onclick="toggleMenu()" style="cursor:pointer; font-size: 20px;">☰</div>
+            <b style="color: var(--acc)">TELEGRAM</b>
         </div>
-        <div class="chats-list" id="roomList"></div>
-        <button class="fab" onclick="createRoom()">+</button>
+        <div id="roomList" style="flex:1; overflow-y:auto;">
+            <!-- Сюда сервер принудительно отдает комнаты -->
+            {% for r_name in rooms %}
+            <div class="room-item" onclick="joinRoom('{{ r_name }}')">
+                <b>{{ r_name }}</b><br><small style="color:gray">нажмите, чтобы войти</small>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="padding: 10px;">
+            <button onclick="createRoom()" class="btn" style="width:100%">+ Создать беседу</button>
+        </div>
     </div>
 
-    <div class="chat-window">
-        <div class="chat-header">
-            <div class="avatar" id="h-av" style="width:35px; height:35px; font-size:14px;">?</div>
-            <div id="h-name" style="font-weight:bold">Выберите чат</div>
-        </div>
-        <div id="messages"></div>
-        <div class="input-panel" id="inputSection" style="display:none">
-            <div style="cursor:pointer; color:var(--accent); font-size: 20px;">📎</div>
-            <input type="text" id="m-inp" class="msg-input" placeholder="Написать сообщение..." onkeypress="if(event.key==='Enter') sendMsg()">
-            <button class="btn-send" onclick="sendMsg()">➤</button>
+    <div class="main">
+        <div id="chat-h" style="padding: 15px; background: var(--side); font-weight: bold; border-bottom: 1px solid #000;">Выберите чат</div>
+        <div id="chat"></div>
+        <div class="input-area" id="i-box" style="display:none">
+            <input type="text" id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') send()">
+            <button onclick="send()" class="btn">➤</button>
         </div>
     </div>
 </div>
 
 <script>
     const socket = io();
-    const myName = "{{ username }}";
-    let activeRoom = null;
+    const me = "{{ username }}";
+    let currentRoom = "";
 
-    function createRoom() {
-        const n = prompt("Название чата:");
-        if(n) socket.emit('create_room', {room: n, password: ''});
+    function toggleMenu() {
+        const d = document.getElementById('drawer');
+        const o = document.getElementById('overlay');
+        d.classList.toggle('open');
+        o.style.display = d.classList.contains('open') ? 'block' : 'none';
     }
 
-    function sendMsg() {
-        const i = document.getElementById("m-inp");
+    async function createRoom() {
+        const name = prompt("Название беседы:");
+        if(!name) return;
+        const res = await fetch('/create_room', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name})
+        });
+        if(res.ok) location.reload(); // Принудительно обновляем, чтобы сервер отдал список
+    }
+
+    function joinRoom(name) {
+        currentRoom = name;
+        document.getElementById("chat-h").innerText = name;
+        document.getElementById("i-box").style.display = "flex";
+        document.getElementById("chat").innerHTML = "";
+        socket.emit('join', {room: name});
+    }
+
+    function send() {
+        const i = document.getElementById("msg");
         if(i.value.trim()) {
-            socket.emit('message', i.value);
+            socket.emit('message', {room: currentRoom, msg: i.value});
             i.value = "";
         }
     }
 
-    socket.on('room_list', (rooms) => {
-        const container = document.getElementById("roomList");
-        container.innerHTML = "";
-        rooms.forEach(r => {
-            const name = r.replace(" [приват]", "");
-            const div = document.createElement("div");
-            div.className = "chat-item";
-            div.onclick = () => socket.emit('join_room', {room: name});
-            div.innerHTML = `<div class="avatar">${name[0].toUpperCase()}</div><div><b>${name}</b></div>`;
-            container.appendChild(div);
-        });
-    });
-
-    socket.on('room_joined', (name) => {
-        activeRoom = name;
-        document.getElementById("h-name").innerText = name;
-        document.getElementById("h-av").innerText = name[0].toUpperCase();
-        document.getElementById("inputSection").style.display = "flex";
-        document.getElementById("messages").innerHTML = "";
-    });
-
-    socket.on('message', (data) => {
-        const chat = document.getElementById("messages");
-        const div = document.createElement("div");
-        const isMine = data.startsWith(myName + ":");
-        div.className = "message " + (isMine ? "mine" : "other");
-        div.innerHTML = `<b>${data.split(':')[0]}</b><br>${data.split(':').slice(1).join(':')}`;
-        chat.appendChild(div);
+    socket.on('chat_msg', (data) => {
+        const chat = document.getElementById("chat");
+        const b = document.createElement("div");
+        b.className = "bubble " + (data.user === me ? "my" : "other");
+        b.innerHTML = `<b>${data.user}:</b><br>${data.msg}`;
+        chat.appendChild(b);
         chat.scrollTop = chat.scrollHeight;
     });
 
-    function filterRooms(v) {
-        document.querySelectorAll(".chat-item").forEach(i => {
-            i.style.display = i.innerText.toLowerCase().includes(v.toLowerCase()) ? "flex" : "none";
-        });
+    function adminLogin() {
+        const p = prompt("Пароль:");
+        if(p === "94488") alert("Доступ разрешен");
     }
 </script>
 </body>
 </html>
 """
 
-# --- СЕРВЕРНАЯ ЛОГИКА ---
-rooms = {}
-
 @app.route('/')
 def index():
-    if 'username' not in session: return redirect(url_for('reg'))
-    return render_template_string(INDEX_HTML, username=session['username'])
+    if 'user' not in session: return redirect('/login')
+    # Принудительно отдаем список комнат из словаря rooms_db
+    return render_template_string(HTML_LAYOUT, username=session['user'], rooms=rooms_db)
 
-@app.route('/reg', methods=['GET', 'POST'])
-def reg():
+@app.route('/login', methods=['GET', 'POST'])
+def login():
     if request.method == 'POST':
-        session['username'] = request.form.get('nick')
-        return redirect(url_for('index'))
-    return '<body style="background:#0e1621; color:white; display:flex; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;"><form method="POST"><h2>Вход в чат</h2><input name="nick" placeholder="Никнейм" required style="padding:10px; border-radius:5px;"><button style="padding:10px; margin-left:5px; background:#5288c1; color:white; border:none; border-radius:5px;">Войти</button></form></body>'
+        session['user'] = request.form.get('nick')
+        return redirect('/')
+    return '<body style="background:#0e1621; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;"><form method="POST"><h2>Вход</h2><input name="nick" required placeholder="Ваш ник"><br><button style="margin-top:10px">Войти</button></form></body>'
 
-@socketio.on('connect')
-def connect():
-    emit('room_list', list(rooms.keys()))
+@app.route('/change_nick', methods=['POST'])
+def change_nick():
+    new_nick = request.form.get('new_nick')
+    if new_nick: session['user'] = new_nick
+    return redirect('/')
 
-@socketio.on('create_room')
-def create(data):
-    name = data['room']
-    rooms[name] = True
-    emit('room_list', list(rooms.keys()), broadcast=True)
+@app.route('/create_room', methods=['POST'])
+def create():
+    data = request.json
+    name = data.get('name', '').strip()
+    if name:
+        rooms_db[name] = {'owner': session.get('user')}
+        return jsonify(success=True)
+    return jsonify(success=False), 400
 
-@socketio.on('join_room')
-def join(data):
-    room = data['room']
-    join_room(room)
-    session['room'] = room
-    emit('room_joined', room)
+@socketio.on('join')
+def on_join(data):
+    join_room(data['room'])
 
 @socketio.on('message')
-def msg(val):
-    room = session.get('room')
-    if room: emit('message', f"{session['username']}: {val}", to=room)
+def handle_msg(data):
+    emit('chat_msg', {'user': session['user'], 'msg': data['msg']}, to=data['room'])
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, host='0.0.0.0', port=port)
+
+
 
 
