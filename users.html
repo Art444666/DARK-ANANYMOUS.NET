@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи</title>
+    <style>
+        body { background: #0e1621; color: #f5f5f5; font-family: sans-serif; padding: 20px; }
+        .user-list { max-width: 400px; margin: 0 auto; }
+        .user-item { 
+            background: #17212b; padding: 15px; margin-bottom: 8px; 
+            border-radius: 10px; display: flex; align-items: center; gap: 10px;
+        }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; background: #5288c1; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .back { color: #5288c1; text-decoration: none; margin-bottom: 20px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="user-list">
+        <a href="/" class="back">← Вернуться в чат</a>
+        <h3>Пользователи в сети: {{ users|length }}</h3>
+        {% for nick in users %}
+        <div class="user-item">
+            <div class="avatar">{{ nick[0] | upper }}</div>
+            <span>{{ nick }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
