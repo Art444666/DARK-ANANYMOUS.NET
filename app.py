@@ -2,7 +2,7 @@ import os, time
 from flask import Flask, session, request, redirect, jsonify, render_template_string
 from werkzeug.security import generate_password_hash, check_password_hash
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".")
 app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
 
 # --- ХРАНИЛИЩА ---
@@ -106,13 +106,186 @@ HTML = """
     <h3 style="color:var(--acc); margin-top:0;">Настройки</h3>
     <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
     <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin-top:5px;" readonly>
+
+    
+    <button  onclick="">_____________________________________</button>
+    
     
     <button class="btn-gear" onclick="toggleCustom()">Настройка вида</button>
     <div id="customPanel" style="display:none; margin-top:15px; padding:15px; background:#242f3d; border-radius:12px;">
         <button onclick="setTheme('default')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#1c252f; color:white; cursor:pointer;">Оригинал</button>
         <button onclick="setTheme('gradient')" style="width:100%; padding:10px; border-radius:8px; border:none; background:linear-gradient(45deg, #5288c1, #2b5278); color:white; cursor:pointer;">Градиент</button>
     </div>
+    <button  onclick="">_____________________________________</button>
+    <!-- Кнопка с прямой ссылкой на скачивание -->
+<a href="https://drive.google.com/file/d/1lalILX5web_RGGGUUwTRCwNkqfo4IK8S/view?usp=drive_link">
+<button class="button">
+  <svg xmlns="http://www.w3.org/2000/svg">
+    <rect class="border" pathLength="100"></rect>
+    <rect class="loading" pathLength="100"></rect>
+
+    <svg
+      class="done-svg"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+    >
+      <path
+        class="done done-cloud"
+        pathLength="100"
+        d="M 6.5,20 Q 4.22,20 2.61,18.43 1,16.85 1,14.58 1,12.63 2.17,11.1 3.35,9.57 5.25,9.15 5.88,6.85 7.75,5.43 9.63,4 12,4 14.93,4 16.96,6.04 19,8.07 19,11 q 1.73,0.2 2.86,1.5 1.14,1.28 1.14,3 0,1.88 -1.31,3.19 Q 20.38,20 18.5,20 Z"
+      ></path>
+      <path
+        class="done done-check"
+        pathLength="100"
+        d="M 7.515,12.74 10.34143,15.563569 15.275,10.625"
+      ></path>
+    </svg>
+  </svg>
+  <div class="txt-upload">Скачать на Пк</div>
+</button>
+</a>
+
+<style>
+    .button {
+  position: relative;
+  width: 10rem;
+  height: 3rem;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.button svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.border {
+  width: 100%;
+  height: 100%;
+  stroke: black;
+  stroke-width: 2px;
+  fill: #0000;
+  rx: 1em;
+  ry: 1em;
+  stroke-dasharray: 25;
+  transition: fill 0.25s;
+  animation: 4s linear infinite stroke-animation;
+}
+
+.button:hover .border {
+  fill: #0001;
+}
+
+.button:focus .border {
+  transition: fill 0.25s 7.75s;
+  fill: #0000;
+}
+
+@keyframes stroke-animation {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.txt-upload {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.txt-upload::after {
+  content: "";
+}
+
+.button:focus .rect {
+  stroke-dasharray: 50;
+}
+.button:focus .border {
+  stroke: #0000;
+}
+
+.button:focus .txt-upload {
+  opacity: 0;
+  transition: opacity 0.25s 8s;
+}
+
+.button:focus .txt-upload::after {
+  animation: 0.66666s anim step-end forwards,
+    1.33333s 0.6666s anim2 linear infinite alternate;
+}
+
+@keyframes anim {
+  0% {
+    content: "i";
+  }
+  50% {
+    content: "in";
+  }
+  to {
+    content: "ing";
+  }
+}
+
+@keyframes anim2 {
+  0% {
+    content: "ing";
+  }
+  33% {
+    content: "ing.";
+  }
+  66% {
+    content: "ing..";
+  }
+  to {
+    content: "ing...";
+  }
+}
+
+.loading {
+  width: 100%;
+  height: 100%;
+  stroke: #0055d4;
+  stroke-width: 2px;
+  fill: none;
+  rx: 1em;
+  ry: 1em;
+  stroke-dasharray: 0 100;
+}
+
+.button:focus .loading {
+  transition: stroke 0.5s 7.5s, stroke-dasharray 8s 0.5s ease-out;
+  stroke: #08ca08;
+  stroke-dasharray: 100 0;
+}
+
+.done {
+  fill: none;
+  stroke: #000;
+  stroke-dasharray: 0 100;
+}
+
+.button:focus .done-cloud {
+  transition: stroke-dasharray 0.75s 8.5s ease-out;
+  stroke-dasharray: 100 0;
+}
+
+.button:focus .done-check {
+  transition: stroke-dasharray 0.5s 9.2s ease-out;
+  stroke: #08ca08;
+  stroke-dasharray: 100 0;
+}
+
+</style>
+
     <button onclick="location.href='/logout'" style="margin-top:40px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Выйти из аккаунта</button>
+    
 </div>
 
 <div class="app-wrap">
@@ -398,8 +571,16 @@ def accept():
         users_data[user]['invites'] = [i for i in users_data[user]['invites'] if i['room'] != room]
     return jsonify(success=True)
 
+@app.route('/users')
+def show_users():
+    # users_data.keys() — это список всех ников из твоего словаря
+    all_users = list(users_data.keys())
+    return render_template('users.html', users=all_users)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
