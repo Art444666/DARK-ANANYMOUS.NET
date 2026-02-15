@@ -678,7 +678,7 @@ function openRoomCall() {
     const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
     
     // Формируем ссылку со слешем
-    const callUrl = "https://meet.jit.si" + roomSecret;
+    const callUrl = "https://meet.jit.si/" + roomSecret;
     
     window.open(callUrl, '_blank');
 
@@ -778,6 +778,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
