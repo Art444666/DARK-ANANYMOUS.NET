@@ -61,49 +61,6 @@ HTML = """
         /* ИНПУТЫ */
         .inp { background: #242f3d; border: none; padding: 12px 16px; border-radius: 25px; color: white; outline: none; font-size: 16px; width: 100%; }
         .input-bar { padding: 10px 15px; background: var(--side); display: flex; gap: 10px; align-items: center; }
-        
-        /* МОБИЛЬНАЯ АДАПТАЦИЯ */
-        @media (max-width: 768px) {
-    .sidebar { 
-        display: none; /* Скрываем боковую панель совсем */
-    }
-
-    .main { 
-        display: flex !important;
-        flex-direction: column; /* Элементы идут сверху вниз */
-        width: 100vw !important; 
-        height: 100dvh !important; /* Высота ровно под экран */
-        position: fixed;
-        top: 0; 
-        left: 0;
-    }
-
-    #chat {
-        flex: 1; /* Чат забирает всё свободное место сверху */
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .input-bar {
-        position: relative; /* Панель всегда идет сразу после чата */
-        background: var(--side);
-        padding: 10px 15px;
-        /* Учет безопасной зоны внизу (для iPhone с полоской) */
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        border-top: 1px solid #000;
-        width: 100%;
-        display: flex;
-        z-index: 10;
-    }
-
-    .mobile-kb-btn {
-        display: flex;
-        position: fixed;
-        right: 20px;
-        bottom: 100px; /* Чуть выше панели ввода */
-        z-index: 1001;
-    }
-}
 
 
 
@@ -363,6 +320,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
