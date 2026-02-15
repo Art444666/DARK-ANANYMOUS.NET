@@ -78,6 +78,96 @@ HTML = """
 }
 
 </style>
+
+<style>
+.cta {
+  position: relative;
+  margin: auto;
+  padding: 12px 18px;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.cta:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50px;
+  background: #234567;
+  width: 45px;
+  height: 45px;
+  transition: all 0.3s ease;
+  display: block;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.cta::after {
+  content: "Hover me";
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50px;
+  background: #fff;
+  width: 9px;
+  height: 21px;
+  transition: all 0.3s ease;
+  font-family: "Ubuntu", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  padding: 12px 18px;
+  z-index: 2;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-align: left;
+}
+
+.cta span {
+  position: relative;
+  font-family: "Ubuntu", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #234567;
+}
+
+.cta svg {
+  position: relative;
+  top: 0;
+  margin-left: 10px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: #234567;
+  stroke-width: 2;
+  transform: translateX(-5px);
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.cta:hover:before {
+  width: 100%;
+}
+.cta:hover::after {
+  width: 100%;
+}
+
+.cta:hover svg {
+  transform: translateX(0);
+  stroke: #fff;
+}
+
+.cta:active {
+  transform: scale(0.95);
+}
+</style>
+
 <style>
     /* Панель эмодзи */
 .emoji-picker {
@@ -294,7 +384,15 @@ HTML = """
 }
 
 </style>
-    <button onclick="location.href='/users'" color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Список пользователей</button>
+    <a href="/users">
+    <button class="cta">
+  <span>Пользователи</span>
+  <svg width="15px" height="10px" viewBox="0 0 13 10">
+    <path d="M1,5 L11,5"></path>
+    <polyline points="8 1 12 5 8 9"></polyline>
+  </svg>
+</button>
+<a>
     <hr class="separator">
 
     <button onclick="location.href='/logout'" style="margin-top:40px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Выйти из аккаунта</button>
@@ -593,6 +691,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
