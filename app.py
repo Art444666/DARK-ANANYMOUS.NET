@@ -74,7 +74,7 @@ HTML = """
     border-top: 1px solid #1c252f; /* Цвет линии (чуть светлее фона) */
     margin: 20px 0;             /* Отступы сверху и снизу */
     width: 100%;                /* Растягиваем на всю ширину */
-    opacity: 0.5;               /* Делаем чуть прозрачной */
+    opacity: 1;               /* Делаем чуть прозрачной */
 }
 
 </style>
@@ -593,6 +593,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
