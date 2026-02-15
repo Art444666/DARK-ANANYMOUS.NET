@@ -658,97 +658,76 @@ function sendMedia(input) {
 }
 
 
-let myPeer;
-let currentCall;
-let localStream;
+let peer;
+let myStream;
+let activeCall;
 
-// Инициализация при входе
-function initPeer(myNick) {
-    myPeer = new Peer(myNick);
-    myPeer.on('call', call => {
-        if (confirm("Входящий звонок от " + call.peer)) {
-            // Отвечаем только аудио по умолчанию
+// Инициализация при загрузке страницы
+window.addEventListener('load', () => {
+    const myNick = "{{ session['user'] }}"; 
+    if (!myNick) return;
+
+    peer = new Peer(myNick);
+
+    // Слушаем входящие
+    peer.on('call', call => {
+        if (confirm("Вам звонит " + call.peer + ". Ответить?")) {
             navigator.mediaDevices.getUserMedia({video: false, audio: true}).then(stream => {
-                localStream = stream;
-                call.answer(stream);
-                showCallUI(call);
+                myStream = stream;
+                call.answer(stream); // Отвечаем своим голосом
+                handleCall(call);
             });
+        } else {
+            call.close();
         }
     });
-}
+});
 
+// Кнопка позвонить
 function startCall() {
-    const target = "{{ current }}";
+    const target = prompt("Введите ник собеседника:");
+    if (!target) return;
+
     navigator.mediaDevices.getUserMedia({video: false, audio: true}).then(stream => {
-        localStream = stream;
-        const call = myPeer.call(target, stream);
-        showCallUI(call);
-    });
+        myStream = stream;
+        const call = peer.call(target, stream); // Звоним
+        handleCall(call);
+        document.getElementById('callStatus').innerText = "Звоним " + target + "...";
+    }).catch(err => alert("Ошибка микрофона: " + err));
 }
 
-function showCallUI(call) {
-    currentCall = call;
-    document.getElementById('callUI').style.display = 'flex';
+// Обработка соединения
+function handleCall(call) {
+    activeCall = call;
+    document.getElementById('callPanel').style.display = 'block';
+
     call.on('stream', remoteStream => {
-        const remoteVid = document.getElementById('remoteVideo');
-        remoteVid.srcObject = remoteStream;
-        // Если в потоке есть видео-трек, показываем окно
-        remoteStream.getVideoTracks().length > 0 ? remoteVid.style.display = 'block' : null;
+        // Получаем звук от собеседника
+        document.getElementById('remoteAudio').srcObject = remoteStream;
+        document.getElementById('callStatus').innerText = "В разговоре с " + call.peer;
     });
-}
 
-// ВКЛЮЧИТЬ КАМЕРУ
-async function toggleCam() {
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (!videoTrack) {
-        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-        const newTrack = stream.getVideoTracks()[0];
-        localStream.addTrack(newTrack);
-        replaceTrack(newTrack);
-        document.getElementById('localVideo').style.display = 'block';
-        document.getElementById('localVideo').srcObject = new MediaStream([newTrack]);
-    } else {
-        videoTrack.enabled = !videoTrack.enabled;
-        document.getElementById('camBtn').style.background = videoTrack.enabled ? 'var(--acc)' : '#242f3d';
-    }
-}
-
-// ДЕМОНСТРАЦИЯ ЭКРАНА
-async function toggleScreen() {
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({video: true});
-    const screenTrack = screenStream.getVideoTracks()[0];
-    replaceTrack(screenTrack);
-    document.getElementById('localVideo').style.display = 'block';
-    document.getElementById('localVideo').srcObject = screenStream;
-}
-
-// Функция замены трека у собеседника без разрыва связи
-function replaceTrack(newTrack) {
-    const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-    if (sender) sender.replaceTrack(newTrack);
-    else currentCall.peerConnection.addTrack(newTrack, localStream);
+    call.on('close', endCall);
+    call.on('error', endCall);
 }
 
 function endCall() {
-    if (currentCall) currentCall.close();
-    location.reload(); // Проще всего сбросить всё через reload
+    if (activeCall) activeCall.close();
+    if (myStream) myStream.getTracks().forEach(t => t.stop());
+    document.getElementById('callPanel').style.display = 'none';
 }
+
 
 
 
 </script>
-<div id="callUI" style="display:none; position:fixed; bottom:20px; right:20px; background:var(--side); padding:15px; border-radius:15px; box-shadow:0 10px 30px #000; z-index:9999; flex-direction:column; gap:10px; border:1px solid var(--acc);">
-    <div style="display:flex; gap:10px;">
-        <video id="remoteVideo" autoplay style="width:250px; border-radius:10px; background:#000; display:none;"></video>
-        <video id="localVideo" autoplay muted style="width:80px; border-radius:8px; background:#222; display:none;"></video>
-    </div>
-    <div id="callStatus" style="text-align:center; font-size:14px; color:var(--acc);">Голосовой звонок...</div>
-    <div style="display:flex; justify-content:center; gap:10px;">
-        <button onclick="toggleCam()" id="camBtn" style="background:#242f3d; border:none; padding:10px; border-radius:50%; cursor:pointer;">📷</button>
-        <button onclick="toggleScreen()" id="screenBtn" style="background:#242f3d; border:none; padding:10px; border-radius:50%; cursor:pointer;">🖥️</button>
-        <button onclick="endCall()" style="background:#ff4b4b; border:none; padding:10px; border-radius:50%; cursor:pointer;">📞</button>
-    </div>
+
+<div id="callPanel" style="display:none; position:fixed; bottom:20px; right:20px; background:#17212b; padding:15px; border-radius:15px; border:1px solid #5288c1; z-index:10000; color:white; text-align:center; box-shadow:0 5px 20px #000;">
+    <div id="callStatus" style="margin-bottom:10px; font-weight:bold;">Звонок...</div>
+    <audio id="remoteAudio" autoplay></audio>
+    <button onclick="endCall()" style="background:#ff4b4b; border:none; color:white; padding:8px 15px; border-radius:10px; cursor:pointer;">Завершить</button>
 </div>
+
 
 </body>
 </html>
@@ -835,6 +814,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
