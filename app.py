@@ -660,17 +660,20 @@ function sendMedia(input) {
 }
 
 function startSimpleCall() {
-    // Берем название текущей комнаты (из твоей переменной)
-    const room = activeRoom || "SecureX_Global"; 
-    
-    if (room === 'BOT') return alert("С ботом созвониться нельзя :)");
+    // 1. Берем название комнаты и убираем ВСЕ лишнее (пробелы, спецсимволы)
+    // Оставляем только буквы и цифры, чтобы DNS не ругался
+    let roomName = activeRoom || "Global";
+    roomName = roomName.replace(/[^a-zA-Z0-9]/g, ""); 
 
-    // Генерируем уникальную ссылку для этой комнаты
-    const callUrl = "https://meet.jit.si_" + room.replace(/\s+/g, '_');
+    // 2. Формируем чистую ссылку
+    const callUrl = "https://meet.jit.si" + roomName;
     
-    // Открываем звонок в новом окне
-    window.open(callUrl, '_blank', 'width=1000,height=700,menubar=no,status=no');
+    console.log("Подключаемся к:", callUrl);
+
+    // 3. Открываем в новом окне
+    window.open(callUrl, '_blank');
 }
+
 
 
 
@@ -762,6 +765,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
