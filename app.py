@@ -432,7 +432,7 @@ HTML = """
                 <b>{{ current }}</b>
             </div>
 
-            <button onclick="openRandomCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
+            <button onclick="openRoomCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
 
             
 <!-- Окно звонка -->
@@ -660,22 +660,34 @@ function sendMedia(input) {
     reader.readAsDataURL(file);
 }
 
-function openRandomCall() {
-    // Генерируем рандомную строку (например: a7f2k9l3)
-    const randomId = Math.random().toString(36).substring(2, 12);
+// Функция для создания "хаотичного" ID на основе названия комнаты
+function getRoomHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0; // Превращаем в 32-битное целое число
+    }
+    return Math.abs(hash).toString(36); // Превращаем в короткую строку букв и цифр
+}
+
+function openRoomCall() {
+    const room = activeRoom || "Global";
     
-    // Формируем ссылку со слешем: https://meet.jit.si
-    // (Используем префикс SecureX, чтобы не попасть в чужой звонок)
-    const callUrl = "https://meet.jit.si/" + randomId;
+    // Генерируем "рандомный" хвост, который всегда будет одинаковым для этой комнаты
+    // Например, для комнаты "Work" он всегда будет "a7k2", а для "Home" — "b9n1"
+    const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
     
-    // Открываем звонок в новой вкладке
+    // Формируем ссылку со слешем
+    const callUrl = "https://meet.jit.si" + roomSecret;
+    
     window.open(callUrl, '_blank');
 
-    // Сразу пишем ссылку в чат, чтобы другие могли кликнуть и зайти к тебе
+    // Оповещаем чат
     if (typeof sendText === "function") {
-        sendText("📞 Заходите в звонок: " + callUrl);
+        sendText("📞 Я в звонке этой комнаты! Залетайте: " + callUrl);
     }
 }
+
 
 
 </script>
@@ -766,6 +778,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
