@@ -701,22 +701,20 @@ window.addEventListener('load', () => {
 
 // Кнопка позвонить
 function startCall() {
-    const target = prompt("Введите ник собеседника:");
-    if (!target) return;
+    // Создаем случайное имя комнаты, чтобы никто чужой не зашел
+    const roomId = "SecureX_" + Math.random().toString(36).substring(7);
+    const callUrl = "https://meet.jit.si" + roomId;
     
-    // Просто отправляем сигнал "Я звоню" через сокет
-    socket.emit('call_user', { to: target, from: "{{ session['user'] }}" });
-    document.getElementById('callPanel').style.display = 'block';
-    document.getElementById('callStatus').innerText = "Вызов " + target + "...";
+    // Формируем красивое сообщение со ссылкой
+    const callMsg = `<div style="background:var(--acc); padding:10px; border-radius:10px; text-align:center;">
+        <b>📞 ЗВОНОК</b><br>
+        <a href="${callUrl}" target="_blank" style="color:white; font-weight:bold; text-decoration:underline;">НАЖМИ, ЧТОБЫ ВОЙТИ В ЗВОНОК</a>
+    </div>`;
+
+    // Отправляем в чат через твою функцию
+    sendText(callMsg);
 }
 
-function handleCallConnection(call) {
-    call.on('stream', remoteStream => {
-        const audio = document.getElementById('remoteAudio');
-        audio.srcObject = remoteStream;
-        document.getElementById('callStatus').innerText = "В разговоре";
-    });
-}
 
 
 
@@ -811,19 +809,10 @@ def show_users():
     all_users = list(users_data.keys())
     return render_template('users.html', users=all_users)
 
-@socketio.on('call_user')
-def handle_call(data):
-    # data содержит: { 'to': 'НикКому', 'from': 'МойНик' }
-    emit('incoming_call', {'from': data['from']}, room=data['to'])
-
-@socketio.on('accept_call')
-def handle_accept(data):
-    # data содержит: { 'to': 'ТотКтоЗвонил' }
-    emit('call_accepted', {'by': session['user']}, room=data['to'])
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
