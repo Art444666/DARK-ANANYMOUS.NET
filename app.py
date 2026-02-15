@@ -562,12 +562,13 @@ HTML = """
     }
 
     function sendPhoto(input) {
+        if (!input.files || !input.files[0]) return; // Проверка наличия файла
         const reader = new FileReader();
         reader.onload = async (e) => {
             await fetch('/send_msg', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({room: activeRoom, msg: e.target.result, type: 'img'}) });
             loadData();
         };
-        reader.readAsDataURL(input.files);
+        reader.readAsDataURL(input.files[0]); // Добавлен индекс [0]
     }
 
     function createRoom() {
@@ -589,6 +590,7 @@ HTML = """
         p.style.display = p.style.display === 'block' ? 'none' : 'block';
     }
 
+    // Инициализация интерфейса
     if(window.innerWidth <= 768) {
         document.querySelectorAll('.mobile-only').forEach(el => el.style.display = 'block');
     }
@@ -598,78 +600,67 @@ HTML = """
 
 
     // Функция открытия/закрытия панели
-function toggleEmoji() {
-    const picker = document.getElementById('emojiPicker');
-    // Переключаем видимость
-    if (picker.style.display === 'grid') {
-        picker.style.display = 'none';
-    } else {
-        picker.style.display = 'grid'; // Используем grid для ровных рядов
+    function toggleEmoji() {
+        const picker = document.getElementById('emojiPicker');
+        if (picker.style.display === 'grid') {
+            picker.style.display = 'none';
+        } else {
+            picker.style.display = 'grid'; 
+        }
     }
-}
 
-// Функция вставки смайла именно в поле сообщения
-function addEmoji(emoji) {
+    function addEmoji(emoji) {
+        const msgInput = document.getElementById('msg');
+        msgInput.value += emoji;
+        msgInput.focus(); 
+    }
+
+    document.addEventListener('mousedown', function(e) {
+        const picker = document.getElementById('emojiPicker');
+        const emojiBtn = e.target.closest('button');
+        if (picker && !picker.contains(e.target) && (!emojiBtn || emojiBtn.innerText !== '😊')) {
+            picker.style.display = 'none';
+        }
+    });
+
+    function getRoomHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0; 
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    function openRoomCall() {
+        const room = activeRoom || "Global";
+        const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
+        const callUrl = "https://meet.jit.si/" + roomSecret;
+        window.open(callUrl, '_blank');
+        if (typeof sendText === "function") {
+            // Для корректной отправки ссылки в чат
+            const i = document.getElementById("msg");
+            const oldVal = i.value;
+            i.value = "📞 Я в звонке этой комнаты! Залетайте: " + callUrl;
+            sendText();
+            i.value = oldVal;
+        }
+    }
+
     const msgInput = document.getElementById('msg');
-    msgInput.value += emoji;
-    msgInput.focus(); // Возвращаем курсор в поле ввода
-}
+    const chatBox = document.getElementById('chat');
 
-// Закрытие панели, если кликнули мимо неё
-document.addEventListener('mousedown', function(e) {
-    const picker = document.getElementById('emojiPicker');
-    const emojiBtn = e.target.closest('button');
-    
-    // Если клик не по панели и не по кнопке смайлов — закрываем
-    if (picker && !picker.contains(e.target) && (!emojiBtn || emojiBtn.innerText !== '😊')) {
-        picker.style.display = 'none';
+    function scrollToBottom() {
+        if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     }
-});
 
-
-// Функция для создания "хаотичного" ID на основе названия комнаты
-function getRoomHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0; // Превращаем в 32-битное целое число
+    if(msgInput) {
+        msgInput.addEventListener('focus', () => {
+            setTimeout(scrollToBottom, 300);
+        }); // Добавлена закрывающая скобка слушателя
     }
-    return Math.abs(hash).toString(36); // Превращаем в короткую строку букв и цифр
-}
-
-function openRoomCall() {
-    const room = activeRoom || "Global";
-    
-    // Генерируем "рандомный" хвост, который всегда будет одинаковым для этой комнаты
-    // Например, для комнаты "Work" он всегда будет "a7k2", а для "Home" — "b9n1"
-    const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
-    
-    // Формируем ссылку со слешем
-    const callUrl = "https://meet.jit.si/" + roomSecret;
-    
-    window.open(callUrl, '_blank');
-
-    // Оповещаем чат
-    if (typeof sendText === "function") {
-        sendText("📞 Я в звонке этой комнаты! Залетайте: " + callUrl);
-    }
-}
-
-
-const msgInput = document.getElementById('msg');
-const chatBox = document.getElementById('chat');
-
-// Скролл вниз
-function scrollToBottom() {
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// Когда нажимаем на поле ввода (вызываем клавиатуру)
-msgInput.addEventListener('focus', () => {
-    // Небольшая задержка, чтобы клавиатура успела выехать
-    setTimeout(scrollToBottom, 300);
-
 </script>
+
 
 </body>
 </html>
@@ -756,6 +747,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
