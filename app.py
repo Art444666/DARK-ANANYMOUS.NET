@@ -222,7 +222,7 @@ HTML = """
     <button onclick="setTheme('emerald')" class="btn-theme" style="background:linear-gradient(135deg, #093028, #237a57); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Изумруд</button>
     <button onclick="setTheme('midnight')" class="btn-theme" style="background:linear-gradient(135deg, #0f2027, #2c5364); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Полночь</button>
     <button onclick="setTheme('neon')" class="btn-theme" style="background:linear-gradient(135deg, #6441a5, #2a0845); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Неон</button>
-    <button onclick="setTheme('carbon')" class="btn-theme" style="background:linear-gradient(135deg, #141e30, #243b55); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Уголь</button>
+
 </div>
 
     <hr class="separator">
@@ -391,7 +391,24 @@ HTML = """
   stroke: #08ca08;
   stroke-dasharray: 100 0;
 }
+.btn-spin {
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Пружинистый эффект */
+}
 
+.btn-spin:hover {
+    transform: rotate(360deg) scale(1.1); /* Прокрутка на 360 градусов и увеличение */
+    box-shadow: 0 0 20px var(--acc); /* Свечение в цвет темы */
+}
+
+.btn-spin:active {
+    transform: scale(0.9) rotate(0deg); /* Сжатие при клике */
+}
+
+/* Чтобы плюс внутри тоже вращался ровно */
+.btn-spin span {
+    display: block;
+    line-height: 0;
+}
 </style>
     <a href="/users">
     <button class="cta">
@@ -427,7 +444,10 @@ HTML = """
             </div>
             {% endfor %}
         </div>
-        <button onclick="createRoom()" style="margin:15px; padding:15px; background:var(--acc); border:none; color:white; border-radius:12px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">+ СОЗДАТЬ ЧАТ</button>
+        <button class="btn-spin" onclick="createRoom()" style="margin:15px; width:55px; height:55px; background:var(--acc); border:none; color:white; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items:center; justify-content:center; font-size: 24px;">
+        <span>+</span>
+        </button>
+
     </div>
 
     <div class="main" id="mainChat">
@@ -706,23 +726,40 @@ def login():
     if request.method == 'POST':
         u = request.form.get('nick').strip()
         p = request.form.get('pass').strip()
+        steam_link = request.form.get('steam', '').strip() # Получаем ссылку
+
         if u in users_auth:
             if check_password_hash(users_auth[u], p):
                 session['user'] = u
                 return redirect('/')
             return '<body style="background:#0e1621;color:white;padding:20px;"><h2>Ошибка: Неверный пароль</h2><a href="/login" style="color:#5288c1">Назад</a></body>'
         else:
+            # РЕГИСТРАЦИЯ НОВОГО ЮЗЕРА
             users_auth[u] = generate_password_hash(p)
-            users_data[u] = {'invites': []}
+            # СОХРАНЯЕМ ССЫЛКУ В СЛОВАРЬ ДАННЫХ
+            users_data[u] = {'invites': [], 'steam': steam_link} 
             session['user'] = u
             return redirect('/')
-    return '''<body style="background:#0e1621;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
-        <form method="POST" style="background:#17212b;padding:30px;border-radius:20px;display:flex;flex-direction:column;gap:15px;width:90%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-            <h2 style="margin:0;color:#5288c1">Вход / Регистрация</h2>
-            <input name="nick" placeholder="Никнейм" required style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;">
-            <input name="pass" type="password" placeholder="Пароль" required style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;">
-            <button style="padding:12px;border-radius:10px;border:none;background:#5288c1;color:white;font-weight:bold;cursor:pointer;">ВОЙТИ</button>
-        </form></body>'''
+            
+    # Твой HTML формы ниже без изменений...
+    return '''<body style="background:#0e1621;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;margin:0;">
+    <form method="POST" style="background:#17212b;padding:30px;border-radius:20px;display:flex;flex-direction:column;gap:15px;width:90%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+        <h2 style="margin:0;color:#5288c1;text-align:center;">Secure X</h2>
+        <p style="margin:0;font-size:12px;color:gray;text-align:center;">Вход или создание аккаунта</p>
+        
+        <input name="nick" placeholder="Никнейм" required style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;">
+        <input name="pass" type="password" placeholder="Пароль" required style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;">
+        
+        <!-- НОВОЕ ПОЛЕ -->
+        <div style="display:flex; flex-direction:column; gap:5px;">
+            <label style="font-size:11px; color:#5288c1; margin-left:5px;">Ссылка на Steam (необязательно)</label>
+            <input name="steam" placeholder="https://steamcommunity.com..." style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;border:1px solid rgba(82, 136, 193, 0.2);">
+        </div>
+
+        <button style="padding:15px;border-radius:10px;border:none;background:#5288c1;color:white;font-weight:bold;cursor:pointer;transition:0.3s;margin-top:10px;" onmouseover="this.style.background='#6399d2'" onmouseout="this.style.background='#5288c1'">ВОЙТИ В СЕТЬ</button>
+    </form>
+</body>
+'''
 
 @app.route('/logout')
 def logout():
@@ -768,13 +805,24 @@ def accept():
 
 @app.route('/users')
 def show_users():
-    # users_data.keys() — это список всех ников из твоего словаря
-    all_users = list(users_data.keys())
-    return render_template('users.html', users=all_users)
+    # Собираем список словарей, где для каждого ника достаем его ссылку на Steam
+    all_users_list = []
+    
+    for nick in users_data:
+        all_users_list.append({
+            'nick': nick,
+            # Достаем ссылку из словаря юзера, если её нет — ставим пустую строку
+            'steam': users_data[nick].get('steam', '') 
+        })
+    
+    # Передаем обновленный список в шаблон
+    return render_template('users.html', users=all_users_list)
+
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
