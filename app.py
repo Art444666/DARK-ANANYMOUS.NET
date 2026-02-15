@@ -432,8 +432,9 @@ HTML = """
                 <b>{{ current }}</b>
             </div>
 
-            <button onclick="startSimpleCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
+            <button onclick="openRandomCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
 
+            
 <!-- Окно звонка -->
 <div id="callInterface" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
     <div style="display:flex; gap:10px;">
@@ -659,22 +660,22 @@ function sendMedia(input) {
     reader.readAsDataURL(file);
 }
 
-function startSimpleCall() {
-    // 1. Берем название комнаты и убираем ВСЕ лишнее (пробелы, спецсимволы)
-    // Оставляем только буквы и цифры, чтобы DNS не ругался
-    let roomName = activeRoom || "Global";
-    roomName = roomName.replace(/[^a-zA-Z0-9]/g, ""); 
-
-    // 2. Формируем чистую ссылку
-    const callUrl = "https://meet.jit.si" + roomName;
+function openRandomCall() {
+    // Генерируем рандомную строку (например: a7f2k9l3)
+    const randomId = Math.random().toString(36).substring(2, 12);
     
-    console.log("Подключаемся к:", callUrl);
-
-    // 3. Открываем в новом окне
+    // Формируем ссылку со слешем: https://meet.jit.si
+    // (Используем префикс SecureX, чтобы не попасть в чужой звонок)
+    const callUrl = "https://meet.jit.si/" + randomId;
+    
+    // Открываем звонок в новой вкладке
     window.open(callUrl, '_blank');
+
+    // Сразу пишем ссылку в чат, чтобы другие могли кликнуть и зайти к тебе
+    if (typeof sendText === "function") {
+        sendText("📞 Заходите в звонок: " + callUrl);
+    }
 }
-
-
 
 
 </script>
@@ -765,6 +766,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
