@@ -627,38 +627,6 @@ document.addEventListener('mousedown', function(e) {
 });
 
 
-function sendMedia(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-        const base64Data = e.target.result;
-        const msgInput = document.getElementById('msg');
-        let content = '';
-
-        if (file.type.startsWith('image')) {
-            content = `<img src="${base64Data}" style="max-width:100%; border-radius:10px; display:block; margin:5px 0;">`;
-        } else if (file.type.startsWith('video')) {
-            content = `<video src="${base64Data}" controls style="max-width:100%; border-radius:10px; display:block; margin:5px 0;"></video>`;
-        }
-
-        // Сохраняем то, что пользователь уже успел написать
-        const oldText = msgInput.value;
-        
-        // Вставляем медиа-код в инпут и вызываем твою функцию отправки
-        msgInput.value = content;
-        sendText(); 
-        
-        // Возвращаем старый текст обратно (если был) или очищаем
-        msgInput.value = oldText;
-        input.value = ""; // Очищаем выбор файла
-    };
-
-    reader.readAsDataURL(file);
-}
-
 // Функция для создания "хаотичного" ID на основе названия комнаты
 function getRoomHash(str) {
     let hash = 0;
@@ -700,25 +668,6 @@ function scrollToBottom() {
 msgInput.addEventListener('focus', () => {
     // Небольшая задержка, чтобы клавиатура успела выехать
     setTimeout(scrollToBottom, 300);
-});
-
-// Если устройство — телефон, предотвращаем скрытие клавиатуры после отправки
-function sendText() {
-    const text = msgInput.value.trim();
-    if (!text) return;
-
-    // Твоя логика отправки (socket.emit или fetch)
-    // ...
-
-    msgInput.value = ""; 
-    
-    // ВАЖНО: возвращаем фокус, чтобы клавиатура не закрылась (как в ТГ)
-    if (document.body.classList.contains('is-phone')) {
-        msgInput.focus();
-    }
-    
-    setTimeout(scrollToBottom, 50);
-}
 
 </script>
 
@@ -807,6 +756,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
