@@ -429,9 +429,8 @@ HTML = """
                 <div onclick="toggleMobileSidebar()" class="mobile-only" style="cursor:pointer; font-size:20px; display:none;">⬅️</div>
                 <b>{{ current }}</b>
             </div>
-            {% if current != 'BOT' %}<button onclick="inviteFriend()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-weight:bold; font-size:14px;">➕ ИНВАЙТ</button>{% endif %}<!-- Кнопка в хедере -->
-            
-<button onclick="startCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:20px;">📞</button>
+
+            <button onclick="startCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:20px;">📞</button>
 
 <!-- Окно звонка -->
 <div id="callInterface" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
@@ -441,6 +440,10 @@ HTML = """
     </div>
     <button onclick="endCall()" style="background:#ff4b4b; color:white; border:none; padding:15px 30px; border-radius:30px; cursor:pointer; font-weight:bold;">Завершить</button>
 </div>
+            
+            {% if current != 'BOT' %}<button onclick="inviteFriend()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-weight:bold; font-size:14px;">➕ ИНВАЙТ</button>{% endif %}<!-- Кнопка в хедере -->
+            
+
 
         </div>
         <div id="chat"></div>
@@ -792,6 +795,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
