@@ -766,23 +766,6 @@ function sendText() {
     setTimeout(scrollToBottom, 50);
 }
 
-
-function setOnlineStatus(isOnline) {
-    const dot = document.getElementById('online-indicator');
-    const text = document.getElementById('status-text');
-    
-    if (isOnline) {
-        dot.style.background = '#4CAF50';
-        text.innerText = 'в сети';
-        text.style.color = '#4CAF50';
-    } else {
-        dot.style.background = '#8e959b'; // Серый цвет
-        text.innerText = 'был(а) недавно';
-        text.style.color = '#8e959b';
-    }
-}
-
-
 </script>
 
 </body>
@@ -870,6 +853,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
