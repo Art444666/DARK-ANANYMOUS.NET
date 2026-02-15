@@ -68,6 +68,35 @@ HTML = """
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
     </style>
+
+<style>
+    /* Панель эмодзи */
+.emoji-picker {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    left: 15px;
+    width: 250px;
+    height: 150px;
+    background: var(--side);
+    border: 1px solid #000;
+    border-radius: 12px;
+    padding: 10px;
+    z-index: 100;
+    overflow-y: auto;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+.emoji-picker span {
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+    display: inline-block;
+    transition: transform 0.1s;
+}
+.emoji-picker span:hover { transform: scale(1.2); }
+</style>
+
+
 </head>
 <body>
 
@@ -121,7 +150,27 @@ HTML = """
         {% if current != 'BOT' %}
         <div class="input-bar">
             <input type="file" id="imgInp" hidden onchange="sendPhoto(this)">
-            <button onclick="toggleEmoji()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">😊</button>
+            <div style="position: relative; display: flex; align-items: center; gap: 10px;">
+    <!-- Кнопка смайлов -->
+    <button onclick="toggleEmoji()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">😊</button>
+    
+    <!-- Сама панель (добавь свои любимые смайлы сюда) -->
+    <div id="emojiPicker" class="emoji-picker">
+        <span onclick="addEmoji('😀')">😀</span>
+        <span onclick="addEmoji('😂')">😂</span>
+        <span onclick="addEmoji('😍')">😍</span>
+        <span onclick="addEmoji('👍')">👍</span>
+        <span onclick="addEmoji('🔥')">🔥</span>
+        <span onclick="addEmoji('🚀')">🚀</span>
+        <span onclick="addEmoji('❤️')">❤️</span>
+        <span onclick="addEmoji('😎')">😎</span>
+        <span onclick="addEmoji('🎉')">🎉</span>
+        <span onclick="addEmoji('🤔')">🤔</span>
+        <span onclick="addEmoji('😢')">😢</span>
+        <span onclick="addEmoji('🤙')">🤙</span>
+    </div>
+</div>
+
             <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()">
             <button onclick="sendText()" style="background:none; border:none; color:var(--acc); font-weight:bold; font-size:24px;">➤</button>
         </div>
@@ -241,6 +290,37 @@ HTML = """
 
     if(activeRoom) { loadData(); setInterval(loadData, 2500); }
     if(localStorage.getItem("chatTheme") === 'gradient') setTheme('gradient');
+
+
+    // Функция открытия/закрытия панели
+function toggleEmoji() {
+    const picker = document.getElementById('emojiPicker');
+    // Переключаем видимость
+    if (picker.style.display === 'grid') {
+        picker.style.display = 'none';
+    } else {
+        picker.style.display = 'grid'; // Используем grid для ровных рядов
+    }
+}
+
+// Функция вставки смайла именно в поле сообщения
+function addEmoji(emoji) {
+    const msgInput = document.getElementById('msg');
+    msgInput.value += emoji;
+    msgInput.focus(); // Возвращаем курсор в поле ввода
+}
+
+// Закрытие панели, если кликнули мимо неё
+document.addEventListener('mousedown', function(e) {
+    const picker = document.getElementById('emojiPicker');
+    const emojiBtn = e.target.closest('button');
+    
+    // Если клик не по панели и не по кнопке смайлов — закрываем
+    if (picker && !picker.contains(e.target) && (!emojiBtn || emojiBtn.innerText !== '😊')) {
+        picker.style.display = 'none';
+    }
+});
+
 </script>
 </body>
 </html>
@@ -320,6 +400,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
