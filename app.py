@@ -1,6 +1,7 @@
 import os, time
 from flask import Flask, session, request, redirect, jsonify, render_template_string, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__, template_folder=".")
 app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
@@ -822,6 +823,7 @@ def handle_accept(data):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
