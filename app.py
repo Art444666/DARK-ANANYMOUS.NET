@@ -455,6 +455,9 @@ HTML = """
     </div>
 </div>
 
+            <input type="file" id="imgInp" hidden accept="image/*,video/*" onchange="sendMedia(this)">
+            <button onclick="document.getElementById('imgInp').click()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📎</button>
+
             <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()">
             <button onclick="sendText()" style="background:none; border:none; color:var(--acc); font-weight:bold; font-size:24px;">➤</button>
         </div>
@@ -605,6 +608,28 @@ document.addEventListener('mousedown', function(e) {
     }
 });
 
+
+function sendMedia(input) {
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const base64Data = e.target.result;
+        let content = '';
+
+        if (file.type.startsWith('image')) {
+            content = `<img src="${base64Data}" style="max-width:200px; border-radius:10px;">`;
+        } else if (file.type.startsWith('video')) {
+            content = `<video src="${base64Data}" controls style="max-width:200px; border-radius:10px;"></video>`;
+        }
+
+        // Вызываем твою стандартную функцию отправки, подставляя вместо текста HTML-тег
+        sendText(content); 
+    };
+
+    if (file) reader.readAsDataURL(file);
+}
+
 </script>
 </body>
 </html>
@@ -691,6 +716,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
