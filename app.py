@@ -1,5 +1,5 @@
 import os, time
-from flask import Flask, session, request, redirect, jsonify, render_template_string
+from flask import Flask, session, request, redirect, jsonify, render_template_string, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, template_folder=".")
@@ -68,7 +68,16 @@ HTML = """
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
     </style>
+<style>
+.separator {
+    border: none;               /* Убираем стандартную рамку */
+    border-top: 1px solid #1c252f; /* Цвет линии (чуть светлее фона) */
+    margin: 20px 0;             /* Отступы сверху и снизу */
+    width: 100%;                /* Растягиваем на всю ширину */
+    opacity: 0.5;               /* Делаем чуть прозрачной */
+}
 
+</style>
 <style>
     /* Панель эмодзи */
 .emoji-picker {
@@ -108,7 +117,8 @@ HTML = """
     <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin-top:5px;" readonly>
 
     
-    <button  onclick="">_____________________________________</button>
+    <hr class="separator">
+
     
     
     <button class="btn-gear" onclick="toggleCustom()">Настройка вида</button>
@@ -116,7 +126,8 @@ HTML = """
         <button onclick="setTheme('default')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#1c252f; color:white; cursor:pointer;">Оригинал</button>
         <button onclick="setTheme('gradient')" style="width:100%; padding:10px; border-radius:8px; border:none; background:linear-gradient(45deg, #5288c1, #2b5278); color:white; cursor:pointer;">Градиент</button>
     </div>
-    <button  onclick="">_____________________________________</button>
+    <hr class="separator">
+
     <!-- Кнопка с прямой ссылкой на скачивание -->
 <a href="https://drive.google.com/file/d/1lalILX5web_RGGGUUwTRCwNkqfo4IK8S/view?usp=drive_link">
 <button class="button">
@@ -284,7 +295,8 @@ HTML = """
 
 </style>
     <button onclick="location.href='/users'" color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Список пользователей</button>
-    <button  onclick="">_____________________________________</button>
+    <hr class="separator">
+
     <button onclick="location.href='/logout'" style="margin-top:40px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Выйти из аккаунта</button>
     
 </div>
@@ -581,6 +593,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
