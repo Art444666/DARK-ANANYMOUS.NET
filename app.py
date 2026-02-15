@@ -658,28 +658,42 @@ function sendMedia(input) {
 }
 
 
-let peer;
 let myStream;
-let activeCall;
+let peer;
 
-// Инициализация при загрузке страницы
+// При загрузке страницы
 window.addEventListener('load', () => {
-    const myNick = "{{ session['user'] }}"; 
-    if (!myNick) return;
-
+    const myNick = "{{ session['user'] }}";
     peer = new Peer(myNick);
 
-    // Слушаем входящие
-    peer.on('call', call => {
-        if (confirm("Вам звонит " + call.peer + ". Ответить?")) {
-            navigator.mediaDevices.getUserMedia({video: false, audio: true}).then(stream => {
+    // 1. Слушаем входящий сигнал от сокета
+    socket.on('incoming_call', (data) => {
+        if (confirm("Вам звонит " + data.from + ". Ответить?")) {
+            // Сообщаем серверу, что мы приняли звонок
+            socket.emit('accept_call', { to: data.from });
+            
+            // Готовим микрофон и ждем соединения от PeerJS
+            navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
                 myStream = stream;
-                call.answer(stream); // Отвечаем своим голосом
-                handleCall(call);
+                document.getElementById('callPanel').style.display = 'block';
+                document.getElementById('callStatus').innerText = "Ожидание соединения...";
             });
-        } else {
-            call.close();
         }
+    });
+
+    // 2. Когда собеседник принял звонок — начинаем Peer-соединение
+    socket.on('call_accepted', (data) => {
+        navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+            myStream = stream;
+            const call = peer.call(data.by, stream); // Инициируем Peer-вызов
+            handleCallConnection(call);
+        });
+    });
+
+    // 3. Обработка входящего Peer-вызова (после подтверждения сокета)
+    peer.on('call', call => {
+        call.answer(myStream);
+        handleCallConnection(call);
     });
 });
 
@@ -687,36 +701,20 @@ window.addEventListener('load', () => {
 function startCall() {
     const target = prompt("Введите ник собеседника:");
     if (!target) return;
-
-    navigator.mediaDevices.getUserMedia({video: false, audio: true}).then(stream => {
-        myStream = stream;
-        const call = peer.call(target, stream); // Звоним
-        handleCall(call);
-        document.getElementById('callStatus').innerText = "Звоним " + target + "...";
-    }).catch(err => alert("Ошибка микрофона: " + err));
-}
-
-// Обработка соединения
-function handleCall(call) {
-    activeCall = call;
+    
+    // Просто отправляем сигнал "Я звоню" через сокет
+    socket.emit('call_user', { to: target, from: "{{ session['user'] }}" });
     document.getElementById('callPanel').style.display = 'block';
+    document.getElementById('callStatus').innerText = "Вызов " + target + "...";
+}
 
+function handleCallConnection(call) {
     call.on('stream', remoteStream => {
-        // Получаем звук от собеседника
-        document.getElementById('remoteAudio').srcObject = remoteStream;
-        document.getElementById('callStatus').innerText = "В разговоре с " + call.peer;
+        const audio = document.getElementById('remoteAudio');
+        audio.srcObject = remoteStream;
+        document.getElementById('callStatus').innerText = "В разговоре";
     });
-
-    call.on('close', endCall);
-    call.on('error', endCall);
 }
-
-function endCall() {
-    if (activeCall) activeCall.close();
-    if (myStream) myStream.getTracks().forEach(t => t.stop());
-    document.getElementById('callPanel').style.display = 'none';
-}
-
 
 
 
@@ -811,9 +809,20 @@ def show_users():
     all_users = list(users_data.keys())
     return render_template('users.html', users=all_users)
 
+@socketio.on('call_user')
+def handle_call(data):
+    # data содержит: { 'to': 'НикКому', 'from': 'МойНик' }
+    emit('incoming_call', {'from': data['from']}, room=data['to'])
+
+@socketio.on('accept_call')
+def handle_accept(data):
+    # data содержит: { 'to': 'ТотКтоЗвонил' }
+    emit('call_accepted', {'by': session['user']}, room=data['to'])
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
