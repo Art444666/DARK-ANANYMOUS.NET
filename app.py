@@ -199,6 +199,51 @@ HTML = """
 
 <script src="https://unpkg.com"></script>
 
+<style>
+body, html {
+    height: 100dvh; /* Динамическая высота под мобилки */
+    overflow: hidden;
+    position: fixed; /* Предотвращает "резиновый" скролл всей страницы */
+    width: 100%;
+}
+
+.app-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Чат, который сжимается, когда вылезает клавиатура */
+#chat {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background-attachment: fixed;
+}
+
+/* Фиксированная панель ввода внизу */
+.input-bar {
+    padding: 8px 12px;
+    background: var(--side);
+    display: flex;
+    align-items: flex-end; /* Чтобы росло вверх при многострочности */
+    gap: 8px;
+    border-top: 1px solid rgba(0,0,0,0.2);
+    padding-bottom: env(safe-area-inset-bottom); /* Отступ для "челки" снизу на iPhone */
+}
+
+.inp {
+    flex: 1;
+    min-height: 40px;
+    max-height: 120px; /* Чтобы не на весь экран */
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 16px; /* Минимум 16px, чтобы iOS не зумил экран */
+}
+</style>
 </head>
 <body>
 
@@ -689,9 +734,109 @@ function openRoomCall() {
 }
 
 
+const msgInput = document.getElementById('msg');
+const chatBox = document.getElementById('chat');
+
+// Скролл вниз
+function scrollToBottom() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Когда нажимаем на поле ввода (вызываем клавиатуру)
+msgInput.addEventListener('focus', () => {
+    // Небольшая задержка, чтобы клавиатура успела выехать
+    setTimeout(scrollToBottom, 300);
+});
+
+// Если устройство — телефон, предотвращаем скрытие клавиатуры после отправки
+function sendText() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    // Твоя логика отправки (socket.emit или fetch)
+    // ...
+
+    msgInput.value = ""; 
+    
+    // ВАЖНО: возвращаем фокус, чтобы клавиатура не закрылась (как в ТГ)
+    if (document.body.classList.contains('is-phone')) {
+        msgInput.focus();
+    }
+    
+    setTimeout(scrollToBottom, 50);
+}
+
+
+function setOnlineStatus(isOnline) {
+    const dot = document.getElementById('online-indicator');
+    const text = document.getElementById('status-text');
+    
+    if (isOnline) {
+        dot.style.background = '#4CAF50';
+        text.innerText = 'в сети';
+        text.style.color = '#4CAF50';
+    } else {
+        dot.style.background = '#8e959b'; // Серый цвет
+        text.innerText = 'был(а) недавно';
+        text.style.color = '#8e959b';
+    }
+}
+
 
 </script>
 
+<div class="header" style="height: 56px; flex-shrink: 0; display: flex; align-items: center; padding: 0 15px; background: var(--side); border-bottom: 1px solid rgba(0,0,0,0.2);">
+    <button onclick="toggleSidebar()" class="mobile-menu-btn" style="background:none; border:none; color:var(--acc); font-size:24px; margin-right:10px; cursor:pointer;">☰</button>
+    
+    <div style="display:flex; align-items:center; gap:10px; flex:1;">
+        <!-- Контейнер для аватарки и точки -->
+        <div class="avatar-wrap" style="position: relative;">
+            <div class="avatar" style="width:35px; height:35px; font-size:14px; background: var(--acc); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                {{ current[0] | upper }}
+            </div>
+            <!-- Зеленая точка -->
+            <div id="online-indicator" style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background: #4CAF50; border: 2px solid var(--side); border-radius: 50%; display: block;"></div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column;">
+            <b style="font-size:16px; color: var(--text); line-height: 1.2;">{{ current }}</b>
+            <span id="status-text" style="font-size: 11px; color: #4CAF50;">в сети</span>
+        </div>
+    </div>
+    
+    <button onclick="openRoomCall()" style="background:none; border:none; color:var(--acc); font-size:22px; cursor:pointer;">📞</button>
+</div>
+
+
+<div class="main" id="mainChat">
+    {% if current %}
+    
+    <!-- СЮДА ВСТАВЛЯЕМ НОВЫЙ HEADER -->
+    <div class="header" style="height: 56px; flex-shrink: 0; display: flex; align-items: center; padding: 0 15px; background: var(--side); border-bottom: 1px solid rgba(0,0,0,0.2);">
+        <button onclick="toggleSidebar()" class="mobile-menu-btn" style="background:none; border:none; color:var(--acc); font-size:24px; margin-right:10px; cursor:pointer;">☰</button>
+        
+        <div style="display:flex; align-items:center; gap:10px; flex:1;">
+            <div class="avatar" style="width:35px; height:35px; font-size:14px; background: var(--acc); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                {{ current[0] | upper }}
+            </div>
+            <b style="font-size:16px; color: var(--text);">{{ current }}</b>
+        </div>
+        
+        <button onclick="openRoomCall()" style="background:none; border:none; color:var(--acc); font-size:22px; cursor:pointer;">📞</button>
+    </div>
+
+    <!-- Дальше идет чат -->
+    <div id="chat">
+        <!-- Сообщения -->
+    </div>
+
+    <!-- Дальше инпут бар -->
+    <div class="input-bar">
+        <!-- Поле ввода -->
+    </div>
+    
+    {% endif %}
+</div>
 
 </body>
 </html>
@@ -778,6 +923,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
