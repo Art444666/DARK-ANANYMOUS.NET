@@ -195,6 +195,7 @@ HTML = """
 .emoji-picker span:hover { transform: scale(1.2); }
 </style>
 
+<script src="https://unpkg.com"></script>
 
 </head>
 <body>
@@ -428,7 +429,19 @@ HTML = """
                 <div onclick="toggleMobileSidebar()" class="mobile-only" style="cursor:pointer; font-size:20px; display:none;">⬅️</div>
                 <b>{{ current }}</b>
             </div>
-            {% if current != 'BOT' %}<button onclick="inviteFriend()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-weight:bold; font-size:14px;">➕ ИНВАЙТ</button>{% endif %}
+            {% if current != 'BOT' %}<button onclick="inviteFriend()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-weight:bold; font-size:14px;">➕ ИНВАЙТ</button>{% endif %}<!-- Кнопка в хедере -->
+            
+<button onclick="startCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:20px;">📞</button>
+
+<!-- Окно звонка -->
+<div id="callInterface" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+    <div style="display:flex; gap:10px;">
+        <video id="remoteVideo" autoplay style="width:300px; border-radius:15px; background:#000;"></video>
+        <video id="localVideo" autoplay muted style="width:100px; border-radius:10px; background:#222;"></video>
+    </div>
+    <button onclick="endCall()" style="background:#ff4b4b; color:white; border:none; padding:15px 30px; border-radius:30px; cursor:pointer; font-weight:bold;">Завершить</button>
+</div>
+
         </div>
         <div id="chat"></div>
         {% if current != 'BOT' %}
@@ -642,6 +655,57 @@ function sendMedia(input) {
 }
 
 
+let myPeer;
+let currentCall;
+
+// Инициализация связи при входе
+function initPeer(myNick) {
+    myPeer = new Peer(myNick); // Твой ID в сети звонков — это твой ник
+
+    myPeer.on('call', (call) => {
+        if (confirm("Вам звонит " + call.peer + ". Ответить?")) {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+                document.getElementById('callInterface').style.display = 'flex';
+                document.getElementById('localVideo').srcObject = stream;
+                call.answer(stream);
+                setupCallHandlers(call);
+            });
+        }
+    });
+}
+
+function startCall() {
+    const remoteNick = "{{ current }}"; // Ник того, кому звоним (из шаблона Flask)
+    
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+        document.getElementById('callInterface').style.display = 'flex';
+        document.getElementById('localVideo').srcObject = stream;
+        
+        const call = myPeer.call(remoteNick, stream);
+        setupCallHandlers(call);
+    }).catch(err => alert("Нет доступа к камере/микрофону"));
+}
+
+function setupCallHandlers(call) {
+    currentCall = call;
+    call.on('stream', (remoteStream) => {
+        document.getElementById('remoteVideo').srcObject = remoteStream;
+    });
+    call.on('close', () => endCall());
+}
+
+function endCall() {
+    if (currentCall) currentCall.close();
+    document.getElementById('callInterface').style.display = 'none';
+    // Останавливаем камеру
+    const stream = document.getElementById('localVideo').srcObject;
+    if (stream) stream.getTracks().forEach(track => track.stop());
+}
+
+// Вызови это при загрузке страницы:
+// initPeer("{{ session['user'] }}");
+
+
 </script>
 </body>
 </html>
@@ -728,6 +792,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
