@@ -214,10 +214,17 @@ HTML = """
     
     
     <button class="btn-gear" onclick="toggleCustom()">Настройка вида</button>
-    <div id="customPanel" style="display:none; margin-top:15px; padding:15px; background:#242f3d; border-radius:12px;">
-        <button onclick="setTheme('default')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:#1c252f; color:white; cursor:pointer;">Оригинал</button>
-        <button onclick="setTheme('gradient')" style="width:100%; padding:10px; border-radius:8px; border:none; background:linear-gradient(45deg, #5288c1, #2b5278); color:white; cursor:pointer;">Градиент</button>
-    </div>
+    <div id="customPanel" style="display:none; margin-top:15px; padding:10px; background:#242f3d; border-radius:12px; gap: 8px; display: flex; flex-direction: column;">
+    <button onclick="setTheme('default')" class="btn-theme" style="background:#1c252f; border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Оригинал</button>
+    <button onclick="setTheme('gradient')" class="btn-theme" style="background:linear-gradient(135deg, #0e1621, #2b5278); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Классика</button>
+    <button onclick="setTheme('sunset')" class="btn-theme" style="background:linear-gradient(135deg, #42275a, #734b6d); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Закат</button>
+    <button onclick="setTheme('ocean')" class="btn-theme" style="background:linear-gradient(135deg, #000428, #004e92); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Океан</button>
+    <button onclick="setTheme('emerald')" class="btn-theme" style="background:linear-gradient(135deg, #093028, #237a57); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Изумруд</button>
+    <button onclick="setTheme('midnight')" class="btn-theme" style="background:linear-gradient(135deg, #0f2027, #2c5364); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Полночь</button>
+    <button onclick="setTheme('neon')" class="btn-theme" style="background:linear-gradient(135deg, #6441a5, #2a0845); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Неон</button>
+    <button onclick="setTheme('carbon')" class="btn-theme" style="background:linear-gradient(135deg, #141e30, #243b55); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Уголь</button>
+</div>
+
     <hr class="separator">
 
     <!-- Кнопка с прямой ссылкой на скачивание -->
@@ -488,7 +495,29 @@ HTML = """
     const me = "{{ username }}";
     const activeRoom = "{{ current }}";
 
-    // Плавное открытие меню
+    // --- БЛОК УВЕДОМЛЕНИЙ ---
+    // Запрос прав при входе
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+    }
+
+    function showNotify(user, text) {
+        // Показываем только если вкладка скрыта и есть права
+        if (document.hidden && Notification.permission === 'granted') {
+            const n = new Notification(`Secure X: ${user}`, {
+                body: text.length > 50 ? text.substring(0, 47) + "..." : text,
+                icon: 'https://cdn-icons-png.flaticon.com',
+                tag: 'chat-msg'
+            });
+            n.onclick = () => { window.focus(); n.close(); };
+            setTimeout(() => n.close(), 5000);
+        }
+        // Звук сообщения (работает всегда)
+        const audio = new Audio('https://cdn.pixabay.com');
+        audio.play().catch(() => {}); // Игнорим ошибку если браузер блокирует автозвук
+    }
+    // -----------------------
+
     function toggleMenu() {
         const d = document.getElementById('drawer');
         const o = document.getElementById('overlay');
@@ -504,16 +533,21 @@ HTML = """
         document.getElementById('sidebar').classList.toggle('mobile-open');
     }
 
-    // Темы
     function setTheme(t) {
         const chat = document.getElementById("mainChat");
-        if(t === 'gradient') {
-            chat.style.background = "linear-gradient(135deg, #0e1621 0%, #1a2a3a 50%, #2b5278 100%)";
-            localStorage.setItem("chatTheme", "gradient");
-        } else {
-            chat.style.background = "var(--bg)";
-            localStorage.setItem("chatTheme", "default");
-        }
+        if (!chat) return;
+        const themes = {
+            'default': 'var(--bg)',
+            'gradient': 'linear-gradient(135deg, #0e1621 0%, #1a2a3a 50%, #2b5278 100%)',
+            'sunset': 'linear-gradient(135deg, #42275a 0%, #734b6d 100%)',
+            'ocean': 'linear-gradient(135deg, #000428 0%, #004e92 100%)',
+            'emerald': 'linear-gradient(135deg, #093028 0%, #237a57 100%)',
+            'midnight': 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+            'neon': 'linear-gradient(135deg, #6441a5 0%, #2a0845 100%)',
+            'carbon': 'linear-gradient(135deg, #141e30 0%, #243b55 100%)'
+        };
+        chat.style.background = themes[t] || themes['default'];
+        localStorage.setItem("chatTheme", t);
     }
 
     async function loadData() {
@@ -540,7 +574,14 @@ HTML = """
                 });
             }
         } else {
-            if(data.messages.length !== box.childElementCount) {
+            // ПРОВЕРКА НА НОВЫЕ СООБЩЕНИЯ ДЛЯ УВЕДОМЛЕНИЙ
+            if(data.messages.length > box.childElementCount) {
+                const lastMsg = data.messages[data.messages.length - 1];
+                // Если сообщение не наше — кидаем пуш
+                if (lastMsg.user !== me && box.childElementCount !== 0) {
+                    showNotify(lastMsg.user, lastMsg.msg);
+                }
+
                 box.innerHTML = "";
                 data.messages.forEach(m => {
                     const d = document.createElement("div");
@@ -557,18 +598,21 @@ HTML = """
     async function sendText() {
         const i = document.getElementById("msg"); if(!i.value.trim()) return;
         const text = i.value; i.value = "";
+        // Удержание фокуса на мобилках
+        if (window.innerWidth <= 768) i.focus();
+        
         await fetch('/send_msg', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({room: activeRoom, msg: text, type: 'text'}) });
         loadData();
     }
 
     function sendPhoto(input) {
-        if (!input.files || !input.files[0]) return; // Проверка наличия файла
+        if (!input.files || !input.files[0]) return;
         const reader = new FileReader();
         reader.onload = async (e) => {
             await fetch('/send_msg', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({room: activeRoom, msg: e.target.result, type: 'img'}) });
             loadData();
         };
-        reader.readAsDataURL(input.files[0]); // Добавлен индекс [0]
+        reader.readAsDataURL(input.files[0]);
     }
 
     function createRoom() {
@@ -590,23 +634,16 @@ HTML = """
         p.style.display = p.style.display === 'block' ? 'none' : 'block';
     }
 
-    // Инициализация интерфейса
     if(window.innerWidth <= 768) {
         document.querySelectorAll('.mobile-only').forEach(el => el.style.display = 'block');
     }
 
     if(activeRoom) { loadData(); setInterval(loadData, 2500); }
-    if(localStorage.getItem("chatTheme") === 'gradient') setTheme('gradient');
+    if(localStorage.getItem("chatTheme")) setTheme(localStorage.getItem("chatTheme"));
 
-
-    // Функция открытия/закрытия панели
     function toggleEmoji() {
         const picker = document.getElementById('emojiPicker');
-        if (picker.style.display === 'grid') {
-            picker.style.display = 'none';
-        } else {
-            picker.style.display = 'grid'; 
-        }
+        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid';
     }
 
     function addEmoji(emoji) {
@@ -637,30 +674,21 @@ HTML = """
         const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
         const callUrl = "https://meet.jit.si/" + roomSecret;
         window.open(callUrl, '_blank');
-        if (typeof sendText === "function") {
-            // Для корректной отправки ссылки в чат
-            const i = document.getElementById("msg");
-            const oldVal = i.value;
-            i.value = "📞 Я в звонке этой комнаты! Залетайте: " + callUrl;
-            sendText();
-            i.value = oldVal;
-        }
+        const i = document.getElementById("msg");
+        const oldVal = i.value;
+        i.value = "📞 Я в звонке этой комнаты! Залетайте: " + callUrl;
+        sendText();
+        i.value = oldVal;
     }
 
     const msgInput = document.getElementById('msg');
     const chatBox = document.getElementById('chat');
-
-    function scrollToBottom() {
-        if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    function scrollToBottom() { if(chatBox) chatBox.scrollTop = chatBox.scrollHeight; }
 
     if(msgInput) {
-        msgInput.addEventListener('focus', () => {
-            setTimeout(scrollToBottom, 300);
-        }); // Добавлена закрывающая скобка слушателя
+        msgInput.addEventListener('focus', () => { setTimeout(scrollToBottom, 300); });
     }
 </script>
-
 
 </body>
 </html>
@@ -747,6 +775,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
