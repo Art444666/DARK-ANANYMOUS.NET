@@ -198,52 +198,6 @@ HTML = """
 </style>
 
 <script src="https://unpkg.com"></script>
-
-<style>
-body, html {
-    height: 100dvh; /* Динамическая высота под мобилки */
-    overflow: hidden;
-    position: fixed; /* Предотвращает "резиновый" скролл всей страницы */
-    width: 100%;
-}
-
-.app-wrap {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-/* Чат, который сжимается, когда вылезает клавиатура */
-#chat {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    background-attachment: fixed;
-}
-
-/* Фиксированная панель ввода внизу */
-.input-bar {
-    padding: 8px 12px;
-    background: var(--side);
-    display: flex;
-    align-items: flex-end; /* Чтобы росло вверх при многострочности */
-    gap: 8px;
-    border-top: 1px solid rgba(0,0,0,0.2);
-    padding-bottom: env(safe-area-inset-bottom); /* Отступ для "челки" снизу на iPhone */
-}
-
-.inp {
-    flex: 1;
-    min-height: 40px;
-    max-height: 120px; /* Чтобы не на весь экран */
-    padding: 10px 15px;
-    border-radius: 20px;
-    font-size: 16px; /* Минимум 16px, чтобы iOS не зумил экран */
-}
-</style>
 </head>
 <body>
 
@@ -853,6 +807,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
