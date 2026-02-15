@@ -283,9 +283,10 @@ HTML = """
 }
 
 </style>
-
-    <button onclick="location.href='/logout'" style="margin-top:40px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Выйти из аккаунта</button>
     <button onclick="location.href='/users'" color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Список пользователей</button>
+    <button  onclick="">_____________________________________</button>
+    <button onclick="location.href='/logout'" style="margin-top:40px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Выйти из аккаунта</button>
+    
 </div>
 
 <div class="app-wrap">
@@ -580,6 +581,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
