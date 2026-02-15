@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__, template_folder=".")
+socketio = SocketIO(app, cors_allowed_origins="*")
 app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
 
 # --- ХРАНИЛИЩА ---
@@ -823,6 +824,7 @@ def handle_accept(data):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
