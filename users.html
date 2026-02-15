@@ -4,26 +4,72 @@
     <meta charset="UTF-8">
     <title>Пользователи</title>
     <style>
-        body { background: #0e1621; color: #f5f5f5; font-family: sans-serif; padding: 20px; }
-        .user-list { max-width: 400px; margin: 0 auto; }
-        .user-item { 
-            background: #17212b; padding: 15px; margin-bottom: 8px; 
-            border-radius: 10px; display: flex; align-items: center; gap: 10px;
+        :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --text: #f5f5f5; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
+        .user-list { max-width: 450px; margin: 0 auto; }
+        
+        /* Поле поиска */
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            background: #242f3d;
+            border: 1px solid #1c252f;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            font-size: 16px;
         }
-        .avatar { width: 35px; height: 35px; border-radius: 50%; background: #5288c1; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .back { color: #5288c1; text-decoration: none; margin-bottom: 20px; display: block; }
+        .search-box:focus { border-color: var(--acc); }
+
+        .user-item { 
+            background: var(--side); padding: 12px; margin-bottom: 8px; 
+            border-radius: 10px; display: flex; align-items: center; gap: 12px;
+            transition: 0.2s;
+        }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .back { color: var(--acc); text-decoration: none; margin-bottom: 20px; display: block; font-weight: bold; }
+        
+        /* Скрытие при поиске */
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="user-list">
-        <a href="/" class="back">← Вернуться в чат</a>
-        <h3>Пользователи в сети: {{ users|length }}</h3>
-        {% for nick in users %}
-        <div class="user-item">
-            <div class="avatar">{{ nick[0] | upper }}</div>
-            <span>{{ nick }}</span>
+        <a href="/" class="back">← Назад в чат</a>
+        <h3>Все пользователи ({{ users|length }})</h3>
+        
+        <!-- ИНПУТ ПОИСКА -->
+        <input type="text" id="userSearch" class="search-box" placeholder="Найти по нику..." onkeyup="filterUsers()">
+
+        <div id="usersContainer">
+            {% for nick in users %}
+            <div class="user-item">
+                <div class="avatar">{{ nick[0] | upper }}</div>
+                <span class="user-nick">{{ nick }}</span>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
+
+    <script>
+        function filterUsers() {
+            const input = document.getElementById('userSearch');
+            const filter = input.value.toLowerCase();
+            const container = document.getElementById('usersContainer');
+            const items = container.getElementsByClassName('user-item');
+
+            for (let i = 0; i < items.length; i++) {
+                const nick = items[i].querySelector('.user-nick').innerText;
+                if (nick.toLowerCase().indexOf(filter) > -1) {
+                    items[i].classList.remove('hidden');
+                } else {
+                    items[i].classList.add('hidden');
+                }
+            }
+        }
+    </script>
 </body>
 </html>
+
