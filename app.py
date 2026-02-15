@@ -17,7 +17,7 @@ HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telegram Secure X</title>
+    <title>F-TOP</title>
     <style>
         :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --msg-in: #182533; --msg-out: #2b5278; --text: #f5f5f5; }
         
@@ -121,7 +121,7 @@ HTML = """
         {% if current != 'BOT' %}
         <div class="input-bar">
             <input type="file" id="imgInp" hidden onchange="sendPhoto(this)">
-            <button onclick="document.getElementById('imgInp').click()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📎</button>
+            <button onclick="toggleEmoji()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">😊</button>
             <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()">
             <button onclick="sendText()" style="background:none; border:none; color:var(--acc); font-weight:bold; font-size:24px;">➤</button>
         </div>
@@ -320,6 +320,7 @@ def accept():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
