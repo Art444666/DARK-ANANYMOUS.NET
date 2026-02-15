@@ -432,7 +432,7 @@ HTML = """
                 <b>{{ current }}</b>
             </div>
 
-            <button onclick="startCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:20px;">📞</button>
+            <button onclick="startSimpleCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
 
 <!-- Окно звонка -->
 <div id="callInterface" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
@@ -659,72 +659,22 @@ function sendMedia(input) {
     reader.readAsDataURL(file);
 }
 
-
-let myStream;
-let peer;
-
-// При загрузке страницы
-window.addEventListener('load', () => {
-    const myNick = "{{ session['user'] }}";
-    peer = new Peer(myNick);
-
-    // 1. Слушаем входящий сигнал от сокета
-    socket.on('incoming_call', (data) => {
-        if (confirm("Вам звонит " + data.from + ". Ответить?")) {
-            // Сообщаем серверу, что мы приняли звонок
-            socket.emit('accept_call', { to: data.from });
-            
-            // Готовим микрофон и ждем соединения от PeerJS
-            navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
-                myStream = stream;
-                document.getElementById('callPanel').style.display = 'block';
-                document.getElementById('callStatus').innerText = "Ожидание соединения...";
-            });
-        }
-    });
-
-    // 2. Когда собеседник принял звонок — начинаем Peer-соединение
-    socket.on('call_accepted', (data) => {
-        navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
-            myStream = stream;
-            const call = peer.call(data.by, stream); // Инициируем Peer-вызов
-            handleCallConnection(call);
-        });
-    });
-
-    // 3. Обработка входящего Peer-вызова (после подтверждения сокета)
-    peer.on('call', call => {
-        call.answer(myStream);
-        handleCallConnection(call);
-    });
-});
-
-// Кнопка позвонить
-function startCall() {
-    // Создаем случайное имя комнаты, чтобы никто чужой не зашел
-    const roomId = "SecureX_" + Math.random().toString(36).substring(7);
-    const callUrl = "https://meet.jit.si" + roomId;
+function startSimpleCall() {
+    // Берем название текущей комнаты (из твоей переменной)
+    const room = activeRoom || "SecureX_Global"; 
     
-    // Формируем красивое сообщение со ссылкой
-    const callMsg = `<div style="background:var(--acc); padding:10px; border-radius:10px; text-align:center;">
-        <b>📞 ЗВОНОК</b><br>
-        <a href="${callUrl}" target="_blank" style="color:white; font-weight:bold; text-decoration:underline;">НАЖМИ, ЧТОБЫ ВОЙТИ В ЗВОНОК</a>
-    </div>`;
+    if (room === 'BOT') return alert("С ботом созвониться нельзя :)");
 
-    // Отправляем в чат через твою функцию
-    sendText(callMsg);
+    // Генерируем уникальную ссылку для этой комнаты
+    const callUrl = "https://meet.jit.si_" + room.replace(/\s+/g, '_');
+    
+    // Открываем звонок в новом окне
+    window.open(callUrl, '_blank', 'width=1000,height=700,menubar=no,status=no');
 }
 
 
 
-
 </script>
-
-<div id="callPanel" style="display:none; position:fixed; bottom:20px; right:20px; background:#17212b; padding:15px; border-radius:15px; border:1px solid #5288c1; z-index:10000; color:white; text-align:center; box-shadow:0 5px 20px #000;">
-    <div id="callStatus" style="margin-bottom:10px; font-weight:bold;">Звонок...</div>
-    <audio id="remoteAudio" autoplay></audio>
-    <button onclick="endCall()" style="background:#ff4b4b; border:none; color:white; padding:8px 15px; border-radius:10px; cursor:pointer;">Завершить</button>
-</div>
 
 
 </body>
@@ -812,6 +762,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
