@@ -302,6 +302,51 @@ HTML = """
     transition: transform 0.1s;
 }
 .emoji-picker span:hover { transform: scale(1.2); }
+
+.theme-panel {
+    display: none; /* Скрыто по умолчанию */
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 12px;
+    background: #242f3d;
+    border-radius: 14px;
+    border: 1px solid rgba(82, 136, 193, 0.2);
+    /* Анимация появления */
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Класс, который мы будем добавлять через JS */
+.theme-panel.active {
+    display: flex;
+}
+
+.btn-theme-opt {
+    width: 100%;
+    height: 40px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.btn-theme-opt:hover {
+    transform: scale(1.02);
+    border-color: var(--acc);
+}
+
+.btn-theme-opt:active {
+    transform: scale(0.98);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 </style>
 
 <script src="https://unpkg.com"></script>
@@ -322,15 +367,16 @@ HTML = """
     <!-- Твои кнопки настроек -->
     <button class="btn-gear" onclick="toggleCustom()">⚙️ Настройка вида</button>
     
-    <div id="customPanel" style="display:none; margin-top:15px; padding:10px; background:#242f3d; border-radius:12px; gap: 8px; display: flex; flex-direction: column;">
-        <button onclick="setTheme('default')" class="btn-theme-opt" style="background:#1c252f;">Оригинал</button>
-        <button onclick="setTheme('gradient')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0e1621, #2b5278);">Классика</button>
-        <button onclick="setTheme('sunset')" class="btn-theme-opt" style="background:linear-gradient(135deg, #42275a, #734b6d);">Закат</button>
-        <button onclick="setTheme('ocean')" class="btn-theme-opt" style="background:linear-gradient(135deg, #000428, #004e92);">Океан</button>
-        <button onclick="setTheme('emerald')" class="btn-theme-opt" style="background:linear-gradient(135deg, #093028, #237a57);">Изумруд</button>
-        <button onclick="setTheme('midnight')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0f2027, #2c5364);">Полночь</button>
-        <button onclick="setTheme('neon')" class="btn-theme-opt" style="background:linear-gradient(135deg, #6441a5, #2a0845);">Неон</button>
-    </div>
+    <div id="customPanel" class="theme-panel">
+    <button onclick="setTheme('default')" class="btn-theme-opt" style="background:#1c252f;">Оригинал</button>
+    <button onclick="setTheme('gradient')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0e1621, #2b5278);">Классика</button>
+    <button onclick="setTheme('sunset')" class="btn-theme-opt" style="background:linear-gradient(135deg, #42275a, #734b6d);">Закат</button>
+    <button onclick="setTheme('ocean')" class="btn-theme-opt" style="background:linear-gradient(135deg, #000428, #004e92);">Океан</button>
+    <button onclick="setTheme('emerald')" class="btn-theme-opt" style="background:linear-gradient(135deg, #093028, #237a57);">Изумруд</button>
+    <button onclick="setTheme('midnight')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0f2027, #2c5364);">Полночь</button>
+    <button onclick="setTheme('neon')" class="btn-theme-opt" style="background:linear-gradient(135deg, #6441a5, #2a0845);">Неон</button>
+</div>
+
 
     <hr class="separator">
 
@@ -362,16 +408,15 @@ HTML = """
 
     <hr class="separator">
 
-    <button onclick="location.href='/logout'" style="margin-top:20px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:0;">Выйти из аккаунта</button>
-
-    <hr class="separator">
-
     <!-- Кнопка с прямой ссылкой на скачивание -->
 <a href="https://drive.google.com/file/d/1lalILX5web_RGGGUUwTRCwNkqfo4IK8S/view?usp=drive_link">
 <button class="button">
   <svg xmlns="http://www.w3.org/2000/svg">
     <rect class="border" pathLength="100"></rect>
     <rect class="loading" pathLength="100"></rect>
+    <hr class="separator">
+
+     <button onclick="location.href='/logout'" style="margin-top:20px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:0;">Выйти из аккаунта</button>
 
     <svg
       class="done-svg"
@@ -552,20 +597,6 @@ HTML = """
     line-height: 0;
 }
 </style>
-    <a href="/users">
-    <button class="cta">
-  <span>Пользователи</span>
-  <svg width="15px" height="10px" viewBox="0 0 13 10">
-    <path d="M1,5 L11,5"></path>
-    <polyline points="8 1 12 5 8 9"></polyline>
-  </svg>
-</button>
-<a>
-    <hr class="separator">
-
-    <button onclick="location.href='/logout'" style="margin-top:40px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; padding:0;">Выйти из аккаунта</button>
-    
-</div>
 
 <div class="app-wrap">
     <div class="sidebar" id="sidebar">
@@ -878,6 +909,36 @@ function manualScrollDown() {
     }
 }
 
+function toggleCustom() {
+    const p = document.getElementById("customPanel");
+    // Переключаем класс active вместо прямой правки стилей
+    p.classList.toggle('active');
+}
+
+function setTheme(t) {
+    const chat = document.getElementById("mainChat");
+    const themes = {
+        'default': 'var(--bg)',
+        'gradient': 'linear-gradient(135deg, #0e1621, #2b5278)',
+        'sunset': 'linear-gradient(135deg, #42275a, #734b6d)',
+        'ocean': 'linear-gradient(135deg, #000428, #004e92)',
+        'emerald': 'linear-gradient(135deg, #093028, #237a57)',
+        'midnight': 'linear-gradient(135deg, #0f2027, #2c5364)',
+        'neon': 'linear-gradient(135deg, #6441a5, #2a0845)'
+    };
+
+    if(chat) {
+        chat.style.background = themes[t] || themes['default'];
+        // Добавляем плавность смены фона
+        chat.style.transition = "background 0.5s ease";
+    }
+    
+    localStorage.setItem("chatTheme", t);
+    
+    // Закрываем меню после выбора (как в нормальных приложениях)
+    setTimeout(toggleCustom, 200); 
+}
+
 </script>
 
 </body>
@@ -990,6 +1051,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
