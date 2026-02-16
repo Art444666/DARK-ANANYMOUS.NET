@@ -70,97 +70,41 @@ HTML = """
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
 
-        /* КРЕСТИК: КРУТИТСЯ И КРАСНЕЕТ */
-.close-btn-spin {
-    background: none;
-    border: none;
-    color: gray;
-    cursor: pointer;
-    font-size: 24px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    align-items: center;
+       /* Оверлей для большого окна */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-}
-
-.close-btn-spin:hover {
-    color: #ff4b4b !important;
-    transform: rotate(90deg) scale(1.2);
-}
-
-/* КНОПКИ МЕНЮ */
-.btn-gear {
-    width: 100%;
-    padding: 12px;
-    background: #242f3d;
-    border: 1px solid transparent;
-    color: white;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    display: flex;
     align-items: center;
-    gap: 10px;
-    transition: 0.3s;
 }
 
-.btn-gear:hover {
-    border-color: var(--acc);
-    background: #2b394a;
+/* Контент большого окна */
+.modal-content {
+    background: var(--side);
+    padding: 25px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid var(--acc);
+    animation: zoomIn 0.3s ease;
 }
 
-/* Иконки в кнопках */
-.btn-gear .icon {
-    display: inline-block;
-    transition: 0.5s;
+@keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
-.btn-gear:hover .spin-icon {
-    transform: rotate(90deg);
-}
-
-/* Опции тем */
 .btn-theme-opt {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-weight: 500;
-    transition: transform 0.2s;
+    width: 100%; padding: 12px; border-radius: 8px; border: none;
+    color: white; cursor: pointer; font-weight: bold; transition: 0.2s;
 }
+.btn-theme-opt:hover { transform: translateY(-2px); filter: brightness(1.2); }
 
-.btn-theme-opt:active {
-    transform: scale(0.95);
-}
-
-.separator {
-    border: none;
-    border-top: 1px solid #242f3d;
-    margin: 15px 0;
-}
-/* КРЕСТИК: КРУТИТСЯ И КРАСНЕЕТ */
-.close-btn-spin {
-    background: none;
-    border: none;
-    color: gray;
-    cursor: pointer;
-    font-size: 24px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-}
-
-.close-btn-spin:hover {
-    color: #ff4b4b !important;
-    transform: rotate(90deg) scale(1.2);
-}
 
 /* КНОПКИ МЕНЮ */
 .btn-gear {
@@ -225,6 +169,23 @@ HTML = """
     opacity: 1;               /* Делаем чуть прозрачной */
 }
 
+/* АНИМАЦИЯ КРЕСТИКА */
+.close-btn-spin {
+    background: none;
+    border: none;
+    color: #8e959b;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.close-btn-spin:hover {
+    color: #ff4b4b !important;
+    transform: rotate(90deg) scale(1.2);
+}
 </style>
 
 <style>
@@ -400,9 +361,8 @@ HTML = """
             <button class="close-btn-spin" onclick="closeSettings(null)">✕</button>
         </div>
 
-        <button class="btn-gear" onclick="manualScrollDown()">
-            <span class="icon">⬇️</span> Промотать чат вниз
-        </button>
+       <button class="close-btn-spin" onclick="toggleMenu()">✕</button>
+        </div>
 
         <p style="color:gray; font-size:14px; margin-top:20px;">Выберите тему:</p>
         <div id="customPanel" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -911,14 +871,28 @@ HTML = """
     p.style.display = isHidden ? 'flex' : 'none';
 }
 
+function openSettings() {
+    // Закрываем мини-меню
+    toggleMenu();
+    // Открываем большое окно
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings(event) {
+    // Закрываем только если нажали на крестик или на темный фон
+    if (!event || event.target.id === 'settingsModal') {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+}
+
 function manualScrollDown() {
     const chat = document.getElementById("chat");
     if(chat) {
         chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
-        // Закрываем всё меню после успешной промотки
-        toggleMenu(); 
+        closeSettings(null); // Закрываем настройки после промотки
     }
 }
+
 </script>
 
 </body>
@@ -1031,6 +1005,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
