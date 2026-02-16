@@ -380,27 +380,6 @@ HTML = """
 
     <hr class="separator">
 
-    
-    <!-- Кнопка с прямой ссылкой на скачивание -->
-<a href="https://drive.google.com/file/d/1lalILX5web_RGGGUUwTRCwNkqfo4IK8S/view?usp=drive_link">
-<button class="button">
-  <svg xmlns="http://www.w3.org/2000/svg">
-    <rect class="border" pathLength="100"></rect>
-    <rect class="loading" pathLength="100"></rect>
-    <hr class="separator">
-    <!-- Кнопка пользователей -->
-    <a href="/users" style="text-decoration:none; display:block; margin-top:15px;">
-        <button class="cta">
-          <span>Пользователи</span>
-          <svg width="15px" height="10px" viewBox="0 0 13 10">
-            <path d="M1,5 L11,5"></path>
-            <polyline points="8 1 12 5 8 9"></polyline>
-          </svg>
-        </button>
-    </a>
-
-    <hr class="separator">
-
      <button onclick="location.href='/logout'" style="margin-top:20px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:0;">Выйти из аккаунта</button>
 
     <svg
@@ -1036,6 +1015,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
