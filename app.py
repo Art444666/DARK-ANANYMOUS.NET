@@ -69,6 +69,152 @@ HTML = """
 
 
         .btn-gear { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--acc); margin-top: 20px; transition: transform 0.5s; }
+
+        /* КРЕСТИК: КРУТИТСЯ И КРАСНЕЕТ */
+.close-btn-spin {
+    background: none;
+    border: none;
+    color: gray;
+    cursor: pointer;
+    font-size: 24px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+}
+
+.close-btn-spin:hover {
+    color: #ff4b4b !important;
+    transform: rotate(90deg) scale(1.2);
+}
+
+/* КНОПКИ МЕНЮ */
+.btn-gear {
+    width: 100%;
+    padding: 12px;
+    background: #242f3d;
+    border: 1px solid transparent;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.btn-gear:hover {
+    border-color: var(--acc);
+    background: #2b394a;
+}
+
+/* Иконки в кнопках */
+.btn-gear .icon {
+    display: inline-block;
+    transition: 0.5s;
+}
+
+.btn-gear:hover .spin-icon {
+    transform: rotate(90deg);
+}
+
+/* Опции тем */
+.btn-theme-opt {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.btn-theme-opt:active {
+    transform: scale(0.95);
+}
+
+.separator {
+    border: none;
+    border-top: 1px solid #242f3d;
+    margin: 15px 0;
+}
+/* КРЕСТИК: КРУТИТСЯ И КРАСНЕЕТ */
+.close-btn-spin {
+    background: none;
+    border: none;
+    color: gray;
+    cursor: pointer;
+    font-size: 24px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+}
+
+.close-btn-spin:hover {
+    color: #ff4b4b !important;
+    transform: rotate(90deg) scale(1.2);
+}
+
+/* КНОПКИ МЕНЮ */
+.btn-gear {
+    width: 100%;
+    padding: 12px;
+    background: #242f3d;
+    border: 1px solid transparent;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.btn-gear:hover {
+    border-color: var(--acc);
+    background: #2b394a;
+}
+
+/* Иконки в кнопках */
+.btn-gear .icon {
+    display: inline-block;
+    transition: 0.5s;
+}
+
+.btn-gear:hover .spin-icon {
+    transform: rotate(90deg);
+}
+
+/* Опции тем */
+.btn-theme-opt {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.btn-theme-opt:active {
+    transform: scale(0.95);
+}
+
+.separator {
+    border: none;
+    border-top: 1px solid #242f3d;
+    margin: 15px 0;
+}
+
     </style>
 <style>
 .separator {
@@ -204,26 +350,43 @@ HTML = """
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <div id="drawer">
-    <h3 style="color:var(--acc); margin-top:0;">Настройки</h3>
-    <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
-    <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin-top:5px;" readonly>
+    <!-- ХЕДЕР НАСТРОЕК С КРУТЯЩИМСЯ КРЕСТИКОМ -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="color:var(--acc); margin:0;">Настройки</h3>
+        <button class="close-btn-spin" onclick="toggleMenu()">✕</button>
+    </div>
 
-    
+    <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
+    <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin: 5px 0 15px 0;" readonly>
+
     <hr class="separator">
 
-    
-    
-    <button class="btn-gear" onclick="toggleCustom()">Настройка вида</button>
-    <div id="customPanel" style="display:none; margin-top:15px; padding:10px; background:#242f3d; border-radius:12px; gap: 8px; display: flex; flex-direction: column;">
-    <button onclick="setTheme('default')" class="btn-theme" style="background:#1c252f; border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Оригинал</button>
-    <button onclick="setTheme('gradient')" class="btn-theme" style="background:linear-gradient(135deg, #0e1621, #2b5278); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Классика</button>
-    <button onclick="setTheme('sunset')" class="btn-theme" style="background:linear-gradient(135deg, #42275a, #734b6d); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Закат</button>
-    <button onclick="setTheme('ocean')" class="btn-theme" style="background:linear-gradient(135deg, #000428, #004e92); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Океан</button>
-    <button onclick="setTheme('emerald')" class="btn-theme" style="background:linear-gradient(135deg, #093028, #237a57); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Изумруд</button>
-    <button onclick="setTheme('midnight')" class="btn-theme" style="background:linear-gradient(135deg, #0f2027, #2c5364); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Полночь</button>
-    <button onclick="setTheme('neon')" class="btn-theme" style="background:linear-gradient(135deg, #6441a5, #2a0845); border:none; color:white; padding:8px; border-radius:8px; cursor:pointer;">Неон</button>
+    <!-- КНОПКА ПРОМОТКИ ВНИЗ -->
+    <button class="btn-gear" onclick="manualScrollDown()">
+        <span class="icon">⬇️</span> Промотать чат вниз
+    </button>
 
+    <!-- КНОПКА НАСТРОЙКИ ВИДА -->
+    <button class="btn-gear" onclick="toggleCustom()" style="margin-top:10px;">
+        <span class="icon spin-icon">⚙️</span> Настройка вида
+    </button>
+
+    <!-- ПАНЕЛЬ ТЕМ -->
+    <div id="customPanel" style="display:none; margin-top:10px; padding:10px; background:#242f3d; border-radius:12px; gap: 8px; flex-direction: column;">
+        <button onclick="setTheme('default')" class="btn-theme-opt" style="background:#1c252f;">Оригинал</button>
+        <button onclick="setTheme('gradient')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0e1621, #2b5278);">Классика</button>
+        <button onclick="setTheme('sunset')" class="btn-theme-opt" style="background:linear-gradient(135deg, #42275a, #734b6d);">Закат</button>
+        <button onclick="setTheme('ocean')" class="btn-theme-opt" style="background:linear-gradient(135deg, #000428, #004e92);">Океан</button>
+        <button onclick="setTheme('emerald')" class="btn-theme-opt" style="background:linear-gradient(135deg, #093028, #237a57);">Изумруд</button>
+        <button onclick="setTheme('midnight')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0f2027, #2c5364);">Полночь</button>
+        <button onclick="setTheme('neon')" class="btn-theme-opt" style="background:linear-gradient(135deg, #6441a5, #2a0845);">Неон</button>
+    </div>
+
+    <hr class="separator" style="margin-top:20px;">
+    
+    <button onclick="location.href='/logout'" style="margin-top:10px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:10px 0;">Выйти из аккаунта</button>
 </div>
+
 
     <hr class="separator">
 
@@ -708,6 +871,20 @@ HTML = """
     if(msgInput) {
         msgInput.addEventListener('focus', () => { setTimeout(scrollToBottom, 300); });
     }
+    function toggleCustom() {
+    const p = document.getElementById("customPanel");
+    const isHidden = p.style.display === 'none' || p.style.display === '';
+    p.style.display = isHidden ? 'flex' : 'none';
+}
+
+function manualScrollDown() {
+    const chat = document.getElementById("chat");
+    if(chat) {
+        chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+        // Закрываем всё меню после успешной промотки
+        toggleMenu(); 
+    }
+}
 </script>
 
 </body>
@@ -820,6 +997,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
