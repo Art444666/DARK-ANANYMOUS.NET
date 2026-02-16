@@ -1139,18 +1139,22 @@ def accept():
 @app.route('/users')
 def show_users():
     all_users = []
+    # Проверяем, существует ли список онлайн-юзеров, если нет - создаем пустой
+    online_list = globals().get('active_users', []) 
+    
     for nick, data in users_data.items():
-        all_users.append({
-            'nick': nick,
-            'steam': data.get('steam', ''),
-            'created_at': data.get('created_at', '16.02.2026'), # твоя дата
-            'online': nick in active_users # список ников в сети
-        })
+        # Проверяем, что data - это словарь, чтобы не было ошибки .get()
+        if isinstance(data, dict):
+            all_users.append({
+                'nick': nick,
+                'steam': data.get('steam', ''),
+                'created_at': data.get('created_at', '16.02.2026'),
+                'online': nick in online_list
+            })
     return render_template('users.html', users=all_users)
-
-
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
