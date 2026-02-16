@@ -349,40 +349,74 @@ HTML = """
 
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
+<!-- 1. МИНИ-МЕНЮ (DRAWER) -->
 <div id="drawer">
-    <!-- ХЕДЕР НАСТРОЕК С КРУТЯЩИМСЯ КРЕСТИКОМ -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="color:var(--acc); margin:0;">Настройки</h3>
+        <h3 style="color:var(--acc); margin:0;">Меню</h3>
         <button class="close-btn-spin" onclick="toggleMenu()">✕</button>
     </div>
 
-    <label style="font-size:12px; color:gray;">ВАШ ID (Защищен)</label>
+    <label style="font-size:12px; color:gray;">ВАШ ID</label>
     <input value="{{ username }}" class="inp" style="background:#1c252f; color:#8e959b; margin: 5px 0 15px 0;" readonly>
 
     <hr class="separator">
 
-    <!-- КНОПКА ПРОМОТКИ ВНИЗ -->
-    <button class="btn-gear" onclick="manualScrollDown()">
-        <span class="icon">⬇️</span> Промотать чат вниз
+    <!-- КНОПКА ОТКРЫТИЯ БОЛЬШИХ НАСТРОЕК -->
+    <button class="btn-gear" onclick="openSettings()">
+        <span class="icon spin-icon">⚙️</span> Настройки вида
     </button>
 
-    <!-- КНОПКА НАСТРОЙКИ ВИДА -->
-    <button class="btn-gear" onclick="toggleCustom()" style="margin-top:10px;">
-        <span class="icon spin-icon">⚙️</span> Настройка вида
-    </button>
+    <div style="margin-top: 15px;">
+        <a href="/users" style="text-decoration: none;">
+            <button class="cta">
+                <span>Пользователи</span>
+                <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5"></path><polyline points="8 1 12 5 8 9"></polyline></svg>
+            </button>
+        </a>
+    </div>
 
-    <!-- ПАНЕЛЬ ТЕМ -->
-    <div id="customPanel" style="display:none; margin-top:10px; padding:10px; background:#242f3d; border-radius:12px; gap: 8px; flex-direction: column;">
-        <button onclick="setTheme('default')" class="btn-theme-opt" style="background:#1c252f;">Оригинал</button>
-        <button onclick="setTheme('gradient')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0e1621, #2b5278);">Классика</button>
-        <button onclick="setTheme('sunset')" class="btn-theme-opt" style="background:linear-gradient(135deg, #42275a, #734b6d);">Закат</button>
-        <button onclick="setTheme('ocean')" class="btn-theme-opt" style="background:linear-gradient(135deg, #000428, #004e92);">Океан</button>
-        <button onclick="setTheme('emerald')" class="btn-theme-opt" style="background:linear-gradient(135deg, #093028, #237a57);">Изумруд</button>
-        <button onclick="setTheme('midnight')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0f2027, #2c5364);">Полночь</button>
-        <button onclick="setTheme('neon')" class="btn-theme-opt" style="background:linear-gradient(135deg, #6441a5, #2a0845);">Неон</button>
+    <div style="margin-top: 20px;">
+        <a href="https://drive.google.com/file/d/1lalILX5web_RGGGUUwTRCwNkqfo4IK8S/view?usp=drive_link" style="text-decoration: none;">
+            <button class="button">
+                <svg xmlns="http://www.w3.org/2000/svg">
+                    <rect class="border" pathLength="100"></rect>
+                    <rect class="loading" pathLength="100"></rect>
+                    <svg class="done-svg" viewBox="0 0 24 24"><path class="done done-cloud" d="M 6.5,20 Q 4.22,20 2.61,18.43 1,16.85 1,14.58 1,12.63 2.17,11.1 3.35,9.57 5.25,9.15 5.88,6.85 7.75,5.43 9.63,4 12,4 14.93,4 16.96,6.04 19,8.07 19,11 q 1.73,0.2 2.86,1.5 1.14,1.28 1.14,3 0,1.88 -1.31,3.19 Q 20.38,20 18.5,20 Z"></path><path class="done done-check" d="M 7.515,12.74 10.34143,15.563569 15.275,10.625"></path></svg>
+                </svg>
+                <div class="txt-upload">Скачать на Пк</div>
+            </button>
+        </a>
     </div>
 
     <hr class="separator" style="margin-top:20px;">
+    <button onclick="location.href='/logout'" style="color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:10px 0;">Выйти из аккаунта</button>
+</div>
+
+<!-- 2. БОЛЬШОЕ МЕНЮ НАСТРОЕК (MODAL) -->
+<div id="settingsModal" class="modal-overlay" onclick="closeSettings(event)">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color:var(--acc); margin:0;">Настройка вида</h2>
+            <button class="close-btn-spin" onclick="closeSettings(null)">✕</button>
+        </div>
+
+        <button class="btn-gear" onclick="manualScrollDown()">
+            <span class="icon">⬇️</span> Промотать чат вниз
+        </button>
+
+        <p style="color:gray; font-size:14px; margin-top:20px;">Выберите тему:</p>
+        <div id="customPanel" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="setTheme('default')" class="btn-theme-opt" style="background:#1c252f;">Оригинал</button>
+            <button onclick="setTheme('gradient')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0e1621, #2b5278);">Классика</button>
+            <button onclick="setTheme('sunset')" class="btn-theme-opt" style="background:linear-gradient(135deg, #42275a, #734b6d);">Закат</button>
+            <button onclick="setTheme('ocean')" class="btn-theme-opt" style="background:linear-gradient(135deg, #000428, #004e92);">Океан</button>
+            <button onclick="setTheme('emerald')" class="btn-theme-opt" style="background:linear-gradient(135deg, #093028, #237a57);">Изумруд</button>
+            <button onclick="setTheme('midnight')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0f2027, #2c5364);">Полночь</button>
+            <button onclick="setTheme('neon')" class="btn-theme-opt" style="background:linear-gradient(135deg, #6441a5, #2a0845);">Неон</button>
+        </div>
+    </div>
+</div>
+
     
     <button onclick="location.href='/logout'" style="margin-top:10px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:10px 0;">Выйти из аккаунта</button>
 </div>
@@ -997,6 +1031,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
