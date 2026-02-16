@@ -368,7 +368,7 @@ HTML = """
     
     <button class="btn-gear" onclick="toggleCustom()">⚙️Тема</button>
     
-    <div id="customPanel" class="theme-panel" style="display: none;">
+    <div id="customPanel" class="theme-panel" style="display: flex;">
     <button onclick="setTheme('default')" class="btn-theme-opt" style="background:#1c252f;">Оригинал</button>
     <button onclick="setTheme('gradient')" class="btn-theme-opt" style="background:linear-gradient(135deg, #0e1621, #2b5278);">Классика</button>
     <button onclick="setTheme('sunset')" class="btn-theme-opt" style="background:linear-gradient(135deg, #42275a, #734b6d);">Закат</button>
@@ -995,6 +995,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
