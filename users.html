@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Пользователи</title>
     <style>
-        :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --text: #f5f5f5; --steam: #66c0f4; }
+        :root { --bg: #0e1621; --side: #17212b; --acc: #5288c1; --text: #f5f5f5; --steam: #66c0f4; --online: #4caf50; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
         .user-list { max-width: 450px; margin: 0 auto; }
         
@@ -14,31 +14,58 @@
             border-radius: 10px; color: white; outline: none;
             box-sizing: border-box; font-size: 16px;
         }
-        .search-box:focus { border-color: var(--acc); }
 
         .user-item { 
             background: var(--side); padding: 12px; margin-bottom: 8px; 
             border-radius: 10px; display: flex; align-items: center; justify-content: space-between;
-            transition: 0.2s;
+            transition: 0.2s; cursor: pointer;
         }
+        .user-item:hover { background: #242f3d; }
+
         .user-info { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-weight: bold; }
         
-        /* Кнопка Steam */
+        /* Аватар с точкой онлайна */
+        .avatar-wrap { position: relative; width: 35px; height: 35px; }
+        .avatar { 
+            width: 100%; height: 100%; border-radius: 50%; background: var(--acc); 
+            display: flex; align-items: center; justify-content: center; font-weight: bold; 
+        }
+        .online-dot { 
+            position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; 
+            background: var(--online); border: 2px solid var(--side); border-radius: 50%; 
+            display: none; /* По умолчанию скрыто, включается через данные */
+        }
+        .is-online .online-dot { display: block; box-shadow: 0 0 5px var(--online); }
+
         .steam-btn {
             background: #171a21; color: var(--steam); border: 1px solid var(--steam);
             padding: 6px 10px; border-radius: 6px; text-decoration: none;
             font-size: 11px; font-weight: bold; transition: 0.3s;
-            text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .steam-btn:hover { background: var(--steam); color: #171a21; }
-        .no-steam { color: #444; font-size: 10px; font-style: italic; }
+
+        /* МОДАЛЬНОЕ ОКНО (КАРТОЧКА) */
+        .modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .card {
+            background: var(--side); padding: 30px; border-radius: 20px;
+            width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: cardIn 0.3s ease-out;
+        }
+        @keyframes cardIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .card .avatar-big { 
+            width: 80px; height: 80px; font-size: 32px; margin: 0 auto 15px; 
+            background: var(--acc); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
 
         .back { color: var(--acc); text-decoration: none; margin-bottom: 20px; display: block; font-weight: bold; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
+
     <div class="user-list">
         <a href="/" class="back">← Назад в чат</a>
         <h3>Все пользователи ({{ users|length }})</h3>
@@ -47,20 +74,37 @@
 
         <div id="usersContainer">
             {% for u in users %}
-            <div class="user-item">
+            <!-- Добавлен класс если юзер онлайн и onclick для карточки -->
+            <div class="user-item {{ 'is-online' if u.online else '' }}" 
+                 onclick="showCard('{{ u.nick }}', '{{ u.steam }}', '{{ u.created_at or 'Неизвестно' }}', {{ 'true' if u.online else 'false' }})">
                 <div class="user-info">
-                    <!-- Берем первую букву ника -->
-                    <div class="avatar">{{ u.nick[0] | upper }}</div>
+                    <div class="avatar-wrap">
+                        <div class="avatar">{{ u.nick[0] | upper }}</div>
+                        <div class="online-dot"></div>
+                    </div>
                     <span class="user-nick">{{ u.nick }}</span>
                 </div>
 
                 {% if u.steam %}
-                <a href="{{ u.steam }}" target="_blank" class="steam-btn">🎮 Steam</a>
-                {% else %}
-                <span class="no-steam">Профиль не указан</span>
+                <span class="steam-btn">ПРОФИЛЬ</span>
                 {% endif %}
             </div>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- МОДАЛКА КАРТОЧКИ -->
+    <div id="userModal" class="modal" onclick="closeCard()">
+        <div class="card" onclick="event.stopPropagation()">
+            <div class="avatar-big" id="cardAvatar"></div>
+            <h2 id="cardNick" style="margin: 0;"></h2>
+            <p id="cardStatus" style="font-size: 14px; margin: 5px 0 20px;"></p>
+            <div style="text-align: left; background: #242f3d; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <small style="color: gray; display: block; margin-bottom: 5px;">ИНФОРМАЦИЯ</small>
+                <div style="font-size: 14px;">📅 Регистрация: <span id="cardDate"></span></div>
+            </div>
+            <div id="cardSteamAction"></div>
+            <button onclick="closeCard()" style="margin-top: 15px; background: none; border: none; color: gray; cursor: pointer;">Закрыть</button>
         </div>
     </div>
 
@@ -68,20 +112,35 @@
         function filterUsers() {
             const input = document.getElementById('userSearch');
             const filter = input.value.toLowerCase();
-            const container = document.getElementById('usersContainer');
-            const items = container.getElementsByClassName('user-item');
-
-            for (let i = 0; i < items.length; i++) {
-                const nick = items[i].querySelector('.user-nick').innerText;
-                if (nick.toLowerCase().indexOf(filter) > -1) {
-                    items[i].classList.remove('hidden');
-                } else {
-                    items[i].classList.add('hidden');
-                }
+            const items = document.getElementsByClassName('user-item');
+            for (let item of items) {
+                const nick = item.querySelector('.user-nick').innerText.toLowerCase();
+                item.classList.toggle('hidden', !nick.includes(filter));
             }
+        }
+
+        function showCard(nick, steam, date, isOnline) {
+            document.getElementById('cardNick').innerText = nick;
+            document.getElementById('cardAvatar').innerText = nick[0].toUpperCase();
+            document.getElementById('cardDate').innerText = date;
+            
+            const status = document.getElementById('cardStatus');
+            status.innerText = isOnline ? '● В сети' : '○ Оффлайн';
+            status.style.color = isOnline ? '#4caf50' : 'gray';
+
+            const action = document.getElementById('cardSteamAction');
+            if(steam && steam !== 'None' && steam !== '') {
+                action.innerHTML = `<a href="${steam}" target="_blank" class="steam-btn" style="display:block; padding:12px;">ОТКРЫТЬ STEAM ПРОФИЛЬ</a>`;
+            } else {
+                action.innerHTML = `<div style="color:gray; font-size:12px;">Steam не подключен</div>`;
+            }
+
+            document.getElementById('userModal').style.display = 'flex';
+        }
+
+        function closeCard() {
+            document.getElementById('userModal').style.display = 'none';
         }
     </script>
 </body>
 </html>
-
-
