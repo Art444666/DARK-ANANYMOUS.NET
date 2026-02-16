@@ -805,23 +805,22 @@ def accept():
 
 @app.route('/users')
 def show_users():
-    # Собираем список словарей, где для каждого ника достаем его ссылку на Steam
-    all_users_list = []
-    
-    for nick in users_data:
-        all_users_list.append({
+    all_users = []
+    for nick, data in users_data.items():
+        all_users.append({
             'nick': nick,
-            # Достаем ссылку из словаря юзера, если её нет — ставим пустую строку
-            'steam': users_data[nick].get('steam', '') 
+            'steam': data.get('steam', ''),
+            'created_at': data.get('created_at', '16.02.2026'), # твоя дата
+            'online': nick in active_users # список ников в сети
         })
-    
-    # Передаем обновленный список в шаблон
-    return render_template('users.html', users=all_users_list)
+    return render_template('users.html', users=all_users)
+
 
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
