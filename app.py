@@ -467,7 +467,7 @@ HTML = """
 
 
     <hr class="separator">
-    <a href="/href">
+    <a href="/users">
     <button class="cta">
   <span>Найти друга</span>
   <svg width="15px" height="10px" viewBox="0 0 13 10">
@@ -1153,63 +1153,4 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
