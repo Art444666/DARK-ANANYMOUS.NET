@@ -363,9 +363,6 @@ HTML = """
     <hr class="separator">
 
     <button onclick="location.href='/logout'" style="margin-top:20px; color:#ff4b4b; background:none; border:none; cursor:pointer; width:100%; text-align:left; font-weight:bold; padding:0;">Выйти из аккаунта</button>
-</div>
-
-
 
     <hr class="separator">
 
@@ -396,6 +393,9 @@ HTML = """
   <div class="txt-upload">Скачать на Пк</div>
 </button>
 </a>
+
+</div>
+
 
 <style>
     .button {
@@ -990,6 +990,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
