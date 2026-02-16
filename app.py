@@ -467,7 +467,7 @@ HTML = """
 
 
     <hr class="separator">
-    <a>
+    <a href="/href">
     <button class="cta">
   <span>Найти друга</span>
   <svg width="15px" height="10px" viewBox="0 0 13 10">
@@ -702,13 +702,7 @@ HTML = """
 <div class="app-wrap">
     <div class="sidebar" id="sidebar">
         <div style="padding:15px; display:flex; gap:15px; align-items:center; border-bottom:1px solid #0e1621;">
-            <label class="burger" for="burger">
-  <!-- Добавили id и onclick -->
-              <input type="checkbox" id="burger" onclick="toggleMenu()">
-              <span></span>
-              <span></span>
-              <span></span>
-            </label>
+            <div onclick="toggleMenu()" style="cursor:pointer; font-size:22px;">☰</div> 
 
             <b style="color:var(--acc); font-size:18px;">F-TOP</b>
         </div>
@@ -1159,6 +1153,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
