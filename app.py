@@ -968,7 +968,7 @@ HTML = """
         const room = activeRoom || "Global";
         const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
         const callUrl = "https://meet.jit.si/" + roomSecret;
-        window.open(callUrl, '_blank');
+        window.open(callUrl, '_self');
         const i = document.getElementById("msg");
         const oldVal = i.value;
         i.value = "📞 Я в звонке этой комнаты! Залетайте: " + callUrl;
@@ -1156,5 +1156,6 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
