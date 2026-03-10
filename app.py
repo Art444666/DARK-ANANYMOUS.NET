@@ -10,7 +10,7 @@ app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
 # --- ХРАНИЛИЩА ---
 rooms_db = {}     
 messages_db = {}  
-users_auth = {}   # { nick: hash_password }
+users_auth = {"1f": generate_password_hash("94488")}   # { nick: hash_password }
 users_data = {}   # { nick: {invites: []} }
 
 HTML = """
@@ -1156,6 +1156,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
