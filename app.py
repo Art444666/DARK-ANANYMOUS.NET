@@ -1136,17 +1136,6 @@ function setTheme(t) {
     // Закрываем меню после выбора (как в нормальных приложениях)
     setTimeout(toggleCustom, 200); 
 }
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    // Если у тебя есть оверлей (затемнение), переключай и его
-    sidebar.classList.toggle('active');
-    
-    // Если нажал на комнату в списке — закрывай меню автоматически
-    const rooms = document.querySelectorAll('.room-item');
-    rooms.forEach(room => {
-        room.onclick = () => sidebar.classList.remove('active');
-    });
-}
 
 </script>
 
@@ -1263,6 +1252,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
