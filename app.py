@@ -1008,12 +1008,25 @@ function setTheme(t) {
     setTimeout(toggleCustom, 200); 
 
     
-    function toggleMobileSidebar() {
-    document.querySelector('.sidebar').classList.toggle('active');
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+    }
     // Если есть элемент с классом sidebar-overlay, переключаем и его
     const overlay = document.querySelector('.sidebar-overlay');
-    if(overlay) overlay.classList.toggle('active');
+    if (overlay) {
+        overlay.classList.toggle('active');
+    }
+} // Вот тут была лишняя скобка с точкой запятой, я её убрал
 
+// Закрываем меню при клике на комнату (для мобилок)
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && e.target.closest('.room-item')) {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.remove('active');
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) overlay.classList.remove('active');
     }
 });
 </script>
@@ -1131,6 +1144,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
