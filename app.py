@@ -387,6 +387,30 @@ body, html {
 }
 
 .mobile-only { display: none; } /* Скрыто на ПК */
+@media (max-width: 768px) {
+    /* Поднимаем панель ввода выше */
+    .input-bar {
+        padding-bottom: 20px !important; /* Увеличиваем нижний отступ */
+        background: #17212b;
+        border-top: 1px solid #0e1621;
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+    }
+
+    /* Делаем само поле ввода чуть крупнее для удобства нажатия пальцем */
+    .inp {
+        height: 45px;
+        font-size: 16px !important; /* Важно против авто-зума iOS */
+    }
+
+    /* Немного увеличиваем расстояние между кнопками (скрепка, смайлы) */
+    .input-bar button {
+        padding: 5px;
+        min-width: 40px;
+    }
+}
+
 </style>
 
 
@@ -758,6 +782,42 @@ body, html {
 
 
 <script>
+    function sendPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    
+    // Проверка размера (например, не больше 5МБ), чтобы сервер не упал
+    if (file.size > 5 * 1024 * 1024) {
+        alert("Файл слишком большой! Максимум 5МБ");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        
+        try {
+            await fetch('/send_msg', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({
+                    room: activeRoom, 
+                    msg: base64Data, 
+                    type: 'img' 
+                }) 
+            });
+            // Очищаем инпут, чтобы можно было выбрать то же фото снова
+            input.value = ""; 
+            loadData(); // Обновляем чат
+        } catch (err) {
+            console.error("Ошибка при отправке фото:", err);
+            alert("Не удалось отправить фото");
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
     function toggleMenu() {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('overlay');
@@ -1074,6 +1134,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
