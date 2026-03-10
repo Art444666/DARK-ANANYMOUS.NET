@@ -756,196 +756,186 @@ body, html {
 
 
 <script>
+    // 1. ИНИЦИАЛИЗАЦИЯ И ДАННЫЕ
     const me = "{{ username }}";
     const activeRoom = "{{ current }}";
 
-    // --- БЛОК УВЕДОМЛЕНИЙ ---
-    // Запрос прав при входе
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    // 2. УВЕДОМЛЕНИЯ
+    if (window.Notification && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission();
     }
 
     function showNotify(user, text) {
-        // Показываем только если вкладка скрыта и есть права
-        if (document.hidden && Notification.permission === 'granted') {
+        if (document.hidden && window.Notification && Notification.permission === 'granted') {
             const n = new Notification(`Secure X: ${user}`, {
                 body: text.length > 50 ? text.substring(0, 47) + "..." : text,
-                icon: 'https://cdn-icons-png.flaticon.com',
-                tag: 'chat-msg'
+                icon: 'https://cdn-icons-png.flaticon.com'
             });
             n.onclick = () => { window.focus(); n.close(); };
             setTimeout(() => n.close(), 5000);
         }
-        // Звук сообщения (работает всегда)
-        const audio = new Audio('https://cdn.pixabay.com');
-        audio.play().catch(() => {}); // Игнорим ошибку если браузер блокирует автозвук
-    }
-    // -----------------------
-
-    function toggleMenu() {
-        const d = document.getElementById('drawer');
-        const o = document.getElementById('overlay');
-        const m = document.getElementById('mainChat');
-        d.classList.toggle('open');
-        const isOpen = d.classList.contains('open');
-        o.style.display = isOpen ? 'block' : 'none';
-        if(isOpen) m.classList.add('blur-mode');
-        else m.classList.remove('blur-mode');
+        new Audio('https://assets.mixkit.co').play().catch(() => {});
     }
 
-    function toggleMobileSidebar() {
-        document.getElementById('sidebar').classList.toggle('mobile-open');
-    }
-
-    function setTheme(t) {
-        const chat = document.getElementById("mainChat");
-        if (!chat) return;
-        const themes = {
-            'default': 'var(--bg)',
-            'gradient': 'linear-gradient(135deg, #0e1621 0%, #1a2a3a 50%, #2b5278 100%)',
-            'sunset': 'linear-gradient(135deg, #42275a 0%, #734b6d 100%)',
-            'ocean': 'linear-gradient(135deg, #000428 0%, #004e92 100%)',
-            'emerald': 'linear-gradient(135deg, #093028 0%, #237a57 100%)',
-            'midnight': 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
-            'neon': 'linear-gradient(135deg, #6441a5 0%, #2a0845 100%)',
-            'carbon': 'linear-gradient(135deg, #141e30 0%, #243b55 100%)'
-        };
-        chat.style.background = themes[t] || themes['default'];
-        localStorage.setItem("chatTheme", t);
-    }
-
-    async function loadData() {
-        if(!activeRoom) return;
-        const res = await fetch(`/sync?room=${activeRoom}`);
-        const data = await res.json();
+    // 3. ЗВОНКИ (JITSI MEET)
+    function openRoomCall() {
+        if (!activeRoom || activeRoom === 'BOT' || activeRoom === 'None') {
+            alert("Звонки в этом чате недоступны");
+            return;
+        }
         
-        if(data.has_invites) document.getElementById('bot-dot').style.display = 'block';
-        else document.getElementById('bot-dot').style.display = 'none';
+        // Создаем уникальный ID комнаты на основе имени
+        const roomHash = "SecureX_" + btoa(unescape(encodeURIComponent(activeRoom))).substring(0, 12);
+        const callUrl = "https://meet.jit.si/" + roomHash;
+        
+        // Открываем звонок
+        window.open(callUrl, '_blank');
 
-        const box = document.getElementById("chat");
-        if(!box) return;
-
-        if(activeRoom === 'BOT') {
-            if(data.invites.length !== box.childElementCount) {
-                box.innerHTML = "";
-                data.invites.forEach(inv => {
-                    const d = document.createElement("div"); d.className = "bubble other";
-                    d.innerHTML = `<div class="invite-card" style="background:#242f3d; padding:10px; border-radius:10px; border:1px solid var(--acc);">
-                        📩 <b>${inv.from}</b> приглашает в <b>${inv.room}</b><br><br>
-                        <button onclick="acceptInvite('${inv.room}')" style="background:var(--acc); border:none; color:white; padding:8px; border-radius:8px; width:100%; cursor:pointer;">Принять вход</button>
-                    </div>`;
-                    box.appendChild(d);
-                });
-            }
-        } else {
-            // ПРОВЕРКА НА НОВЫЕ СООБЩЕНИЯ ДЛЯ УВЕДОМЛЕНИЙ
-            if(data.messages.length > box.childElementCount) {
-                const lastMsg = data.messages[data.messages.length - 1];
-                // Если сообщение не наше — кидаем пуш
-                if (lastMsg.user !== me && box.childElementCount !== 0) {
-                    showNotify(lastMsg.user, lastMsg.msg);
-                }
-
-                box.innerHTML = "";
-                data.messages.forEach(m => {
-                    const d = document.createElement("div");
-                    d.className = "bubble " + (m.user === me ? "mine" : "other");
-                    if(m.type === 'img') d.innerHTML = `<small style="color:var(--acc); font-size:10px;">${m.user}</small><br><img src="${m.msg}" style="max-width:100%; border-radius:10px;">`;
-                    else d.innerHTML = `<small style="color:var(--acc); font-size:10px;">${m.user}</small><br>${m.msg}`;
-                    box.appendChild(d);
-                });
-                box.scrollTop = box.scrollHeight;
-            }
+        // Отправляем системное сообщение в чат
+        const msgInp = document.getElementById("msg");
+        if (msgInp) {
+            const originalVal = msgInp.value;
+            msgInp.value = "📞 Я в звонке! Подключайтесь: " + callUrl;
+            sendText();
+            msgInp.value = originalVal;
         }
     }
 
+    // 4. СИНХРОНИЗАЦИЯ (ОБНОВЛЕНИЕ ЧАТА И БОТА)
+    async function loadData() {
+        if(!activeRoom || activeRoom === 'None') return;
+        try {
+            const res = await fetch(`/sync?room=${encodeURIComponent(activeRoom)}`);
+            const data = await res.json();
+            
+            const dot = document.getElementById('bot-dot');
+            if(dot) dot.style.display = data.has_invites ? 'block' : 'none';
+
+            const box = document.getElementById("chat");
+            if(!box) return;
+
+            if(activeRoom === 'BOT') {
+                if(data.invites && data.invites.length !== box.childElementCount) {
+                    box.innerHTML = "";
+                    data.invites.forEach(inv => {
+                        const d = document.createElement("div");
+                        d.className = "bubble other";
+                        d.innerHTML = `
+                            <div class="invite-card" style="background:#242f3d; padding:15px; border-radius:12px; border:1px solid var(--acc); margin:10px 0;">
+                                <b style="color:var(--acc)">📩 ПРИГЛАШЕНИЕ</b><br>
+                                <b>${inv.from}</b> зовет в <b>${inv.room}</b><br><br>
+                                <button onclick="acceptInvite('${inv.room}')" style="background:var(--acc); border:none; color:white; padding:10px; border-radius:8px; width:100%; cursor:pointer; font-weight:bold;">ПРИНЯТЬ</button>
+                            </div>`;
+                        box.appendChild(d);
+                    });
+                }
+            } else {
+                if(data.messages && data.messages.length > box.childElementCount) {
+                    const isNew = box.childElementCount !== 0;
+                    box.innerHTML = "";
+                    data.messages.forEach(m => {
+                        const d = document.createElement("div");
+                        d.className = "bubble " + (m.user === me ? "mine" : "other");
+                        if(m.type === 'img') {
+                            d.innerHTML = `<small style="color:var(--acc); font-size:10px;">${m.user}</small><br><img src="${m.msg}" style="max-width:100%; border-radius:10px; cursor:pointer;" onclick="window.open(this.src)">`;
+                        } else {
+                            d.innerHTML = `<small style="color:var(--acc); font-size:10px;">${m.user}</small><br>${m.msg}`;
+                        }
+                        box.appendChild(d);
+                    });
+                    if(isNew && data.messages[data.messages.length-1].user !== me) {
+                        showNotify(data.messages[data.messages.length-1].user, data.messages[data.messages.length-1].msg);
+                    }
+                    box.scrollTop = box.scrollHeight;
+                }
+            }
+        } catch (e) { console.error("Sync error"); }
+    }
+
+    // 5. ОСНОВНЫЕ ФУНКЦИИ
     async function sendText() {
-        const i = document.getElementById("msg"); if(!i.value.trim()) return;
+        const i = document.getElementById("msg"); 
+        if(!i || !i.value.trim()) return;
         const text = i.value; i.value = "";
-        // Удержание фокуса на мобилках
-        if (window.innerWidth <= 768) i.focus();
-        
         await fetch('/send_msg', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({room: activeRoom, msg: text, type: 'text'}) });
         loadData();
     }
 
-    function sendPhoto(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            await fetch('/send_msg', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({room: activeRoom, msg: e.target.result, type: 'img'}) });
-            loadData();
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-
     function createRoom() {
-        const n = prompt("Имя чата:");
-        if(n) fetch('/create', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:n})}).then(() => location.href='/?room='+encodeURIComponent(n));
+        const n = prompt("Название чата:");
+        if(n) fetch('/create', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:n.trim()})}).then(() => location.href='/?room='+encodeURIComponent(n.trim()));
     }
 
     function inviteFriend() {
-        const who = prompt("Ник друга:");
-        if(who) fetch('/send_invite', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({to:who, room:activeRoom})}).then(r=>r.json()).then(d => alert(d.msg));
+        const who = prompt("Никнейм друга:");
+        if(who) fetch('/send_invite', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({to:who.trim(), room:activeRoom})}).then(r=>r.json()).then(d => alert(d.msg));
     }
 
     function acceptInvite(r) {
         fetch('/accept', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({room:r})}).then(() => location.href='/?room='+encodeURIComponent(r));
     }
 
- function setTheme(t) {
-    const chat = document.getElementById("mainChat");
-    const themes = {
-        'default': 'var(--bg)',
-        'gradient': 'linear-gradient(135deg, #0e1621, #2b5278)',
-        'sunset': 'linear-gradient(135deg, #42275a, #734b6d)',
-        'ocean': 'linear-gradient(135deg, #000428, #004e92)',
-        'emerald': 'linear-gradient(135deg, #093028, #237a57)',
-        'midnight': 'linear-gradient(135deg, #0f2027, #2c5364)',
-        'neon': 'linear-gradient(135deg, #6441a5, #2a0845)'
-    };
-
-    if(chat) {
-        chat.style.background = themes[t] || themes['default'];
-        chat.style.transition = "background 0.5s ease";
-    }
-    
-    localStorage.setItem("chatTheme", t);
-    setTimeout(toggleCustom, 200); 
-} // Закрыли setTheme правильно
-
-function toggleMobileSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
-    }
-    const overlay = document.querySelector('.sidebar-overlay');
-    if (overlay) {
-        overlay.classList.toggle('active');
-    }
-}
-
-// Слушатель кликов для закрытия меню на мобилках
-document.addEventListener('click', (e) => {
-    if (window.innerWidth <= 768) {
-        if (e.target.closest('.room-item')) {
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar) sidebar.classList.remove('active');
-            const overlay = document.querySelector('.sidebar-overlay');
-            if (overlay) overlay.classList.remove('active');
+    // 6. ИНТЕРФЕЙС (МЕНЮ, ЭМОДЗИ, ТЕМЫ)
+    function toggleMenu() {
+        const d = document.getElementById('drawer');
+        const o = document.getElementById('overlay');
+        if(d && o) {
+            d.classList.toggle('open');
+            o.style.display = d.classList.contains('open') ? 'block' : 'none';
+            document.getElementById('mainChat').classList.toggle('blur-mode');
         }
     }
-});
 
-// Оставляем только ОДНУ версию toggleCustom
-function toggleCustom() {
-    const p = document.getElementById("customPanel");
-    if (p) {
-        p.classList.toggle('active');
-        // Если класса active нет в CSS, используй строку ниже:
-        // p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+    function toggleMobileSidebar() {
+        const s = document.getElementById('sidebar');
+        if(s) s.classList.toggle('active');
     }
-}
+
+    function toggleEmoji() {
+        const p = document.getElementById('emojiPicker');
+        if(p) p.style.display = (p.style.display === 'grid') ? 'none' : 'grid';
+    }
+
+    function addEmoji(e) {
+        const i = document.getElementById('msg');
+        if(i) { i.value += e; i.focus(); }
+    }
+
+    function toggleCustom() {
+        const p = document.getElementById("customPanel");
+        if(p) p.classList.toggle('active');
+    }
+
+    function setTheme(t) {
+        const chat = document.getElementById("mainChat");
+        const themes = {
+            'default': 'var(--bg)',
+            'gradient': 'linear-gradient(135deg, #0e1621, #2b5278)',
+            'sunset': 'linear-gradient(135deg, #42275a, #734b6d)',
+            'ocean': 'linear-gradient(135deg, #000428, #004e92)',
+            'emerald': 'linear-gradient(135deg, #093028, #237a57)',
+            'midnight': 'linear-gradient(135deg, #0f2027, #2c5364)',
+            'neon': 'linear-gradient(135deg, #6441a5, #2a0845)'
+        };
+        if(chat) chat.style.background = themes[t] || themes['default'];
+        localStorage.setItem("chatTheme", t);
+    }
+
+    // 7. СТАРТ
+    if(activeRoom && activeRoom !== 'None') {
+        loadData();
+        setInterval(loadData, 2500);
+    }
+    const saved = localStorage.getItem("chatTheme");
+    if(saved) setTheme(saved);
+
+    // Закрытие бокового меню при клике на комнату (мобилки)
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && e.target.closest('.room-item')) {
+            const s = document.getElementById('sidebar');
+            if(s) s.classList.remove('active');
+        }
+    });
 </script>
 
 
@@ -1062,6 +1052,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
