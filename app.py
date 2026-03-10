@@ -1018,22 +1018,24 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        u = request.form.get('nick').strip()
-        p = request.form.get('pass').strip()
-        steam_link = request.form.get('steam', '').strip() # Получаем ссылку
+        u = request.form.get('nick', '').strip()
+        p = request.form.get('pass', '').strip()
+        steam_link = request.form.get('steam', '').strip()
 
         if u in users_auth:
             if check_password_hash(users_auth[u], p):
                 session['user'] = u
-                return redirect('/')
+                # ПЕРЕХОД К БОТУ ПОСЛЕ ВХОДА
+                return redirect('/?room=BOT')
             return '<body style="background:#0e1621;color:white;padding:20px;"><h2>Ошибка: Неверный пароль</h2><a href="/login" style="color:#5288c1">Назад</a></body>'
         else:
             # РЕГИСТРАЦИЯ НОВОГО ЮЗЕРА
             users_auth[u] = generate_password_hash(p)
-            # СОХРАНЯЕМ ССЫЛКУ В СЛОВАРЬ ДАННЫХ
             users_data[u] = {'invites': [], 'steam': steam_link} 
             session['user'] = u
-            return redirect('/')
+            # ПЕРЕХОД К БОТУ ПОСЛЕ РЕГИСТРАЦИИ
+            return redirect('/?room=BOT')
+
             
     # Твой HTML формы ниже без изменений...
     return '''<head>
@@ -1133,6 +1135,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
