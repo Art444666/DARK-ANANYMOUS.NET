@@ -479,6 +479,39 @@ body, html {
         grid-template-columns: repeat(6, 1fr); /* Больше колонок для мелких эмодзи */
     }
 }
+@media (max-width: 768px) {
+    /* Показываем стрелку */
+    .mobile-back {
+        display: flex !important;
+    }
+
+    /* Боковая панель теперь выезжает поверх чата */
+    .sidebar {
+        position: fixed;
+        left: -100%; /* Спрятана за экраном */
+        top: 0;
+        width: 85%;
+        height: 100%;
+        z-index: 999;
+        background: #17212b;
+        transition: transform 0.3s ease;
+    }
+
+    /* Когда меню активно — выезжает */
+    .sidebar.active {
+        transform: translateX(100%);
+    }
+
+    /* Затемнение фона при открытом меню (опционально) */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 998;
+    }
+    .sidebar-overlay.active { display: block; }
+}
 
 </style>
 
@@ -773,12 +806,20 @@ body, html {
     </div>
 
     <div class="main" id="mainChat">
-        {% if current %}
-        <div class="header">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div onclick="toggleMobileSidebar()" class="mobile-only" style="cursor:pointer; font-size:20px; display:none;">⬅️</div>
-                <b>{{ current }}</b>
+    {% if current %}
+    <div class="header" style="display:flex; align-items:center; padding: 10px 15px; background: #242f3d; border-bottom: 1px solid #111;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div onclick="toggleMobileSidebar()" class="mobile-only" style="cursor:pointer; display:flex; align-items:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
             </div>
+            <b style="font-size: 18px;">{{ current }}</b>
+        </div>
+    </div>
+    {% endif %}
+
 
             <button onclick="openRoomCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
 
@@ -1095,6 +1136,17 @@ function setTheme(t) {
     // Закрываем меню после выбора (как в нормальных приложениях)
     setTimeout(toggleCustom, 200); 
 }
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    // Если у тебя есть оверлей (затемнение), переключай и его
+    sidebar.classList.toggle('active');
+    
+    // Если нажал на комнату в списке — закрывай меню автоматически
+    const rooms = document.querySelectorAll('.room-item');
+    rooms.forEach(room => {
+        room.onclick = () => sidebar.classList.remove('active');
+    });
+}
 
 </script>
 
@@ -1211,6 +1263,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
