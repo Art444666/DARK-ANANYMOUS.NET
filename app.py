@@ -10,8 +10,12 @@ app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
 # --- ХРАНИЛИЩА ---
 rooms_db = {}     
 messages_db = {}  
-users_auth = {"1f": generate_password_hash("94488")}   # { nick: hash_password }
-users_data = {"1f": {"invites": []}}   # { nick: {invites: []} }
+users_auth = {"1f": generate_password_hash("94488")
+             "Kabanchikhors": generate_password_hash("Kabanchikhors")
+             }   # { nick: hash_password }
+users_data = {"1f": {"invites": []}, "steam": "https://steamcommunity.com/id/1ftop/"
+             "Kabanchikhors": {"invites": []}, "steam": "https://steamcommunity.com/profiles/76561199817463038/"
+             }   # { nick: {invites: []} }
 
 HTML = """
 <!DOCTYPE html>
@@ -433,10 +437,42 @@ HTML = """
 .cta:active {
   transform: scale(0.95);
 }
+/* Общие правила для адаптивности */
+body, html {
+    overflow-x: hidden; /* Запрещаем горизонтальную прокрутку */
+    width: 100%;
+}
+
+/* Основной контейнер чата */
+.chat-container {
+    width: 95%;          /* На мобилках почти во весь экран */
+    max-width: 800px;    /* На компах не шире 800px */
+    margin: 0 auto;
+}
+
+/* Адаптация для экранов меньше 600px */
+@media (max-width: 600px) {
+    .sidebar {
+        display: none;   /* Прячем список комнат, если он мешает */
+    }
+    
+    input, button {
+        font-size: 16px !important; /* Важно: предотвращает авто-зум в iOS */
+    }
+    
+    .messages {
+        height: 70vh;    /* Делаем высоту чата удобной для телефона */
+    }
+    
+    .emoji-picker {
+        grid-template-columns: repeat(6, 1fr); /* Больше колонок для мелких эмодзи */
+    }
+}
 
 </style>
 
 <script src="https://unpkg.com"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
 
@@ -760,18 +796,26 @@ HTML = """
     
     <!-- Сама панель (добавь свои любимые смайлы сюда) -->
     <div id="emojiPicker" class="emoji-picker">
-        <span onclick="addEmoji('😀')">😀</span>
-        <span onclick="addEmoji('😂')">😂</span>
-        <span onclick="addEmoji('😍')">😍</span>
-        <span onclick="addEmoji('👍')">👍</span>
-        <span onclick="addEmoji('🔥')">🔥</span>
-        <span onclick="addEmoji('🚀')">🚀</span>
-        <span onclick="addEmoji('❤️')">❤️</span>
-        <span onclick="addEmoji('😎')">😎</span>
-        <span onclick="addEmoji('🎉')">🎉</span>
-        <span onclick="addEmoji('🤔')">🤔</span>
-        <span onclick="addEmoji('😢')">😢</span>
-        <span onclick="addEmoji('🤙')">🤙</span>
+        <span onclick="addEmoji('😀')" style="cursor:pointer; font-size: 20px;">😀</span>
+        <span onclick="addEmoji('😂')" style="cursor:pointer; font-size: 20px;">😂</span>
+        <span onclick="addEmoji('😍')" style="cursor:pointer; font-size: 20px;">😍</span>
+        <span onclick="addEmoji('👍')" style="cursor:pointer; font-size: 20px;">👍</span>
+        <span onclick="addEmoji('🔥')" style="cursor:pointer; font-size: 20px;">🔥</span>
+        <span onclick="addEmoji('🚀')" style="cursor:pointer; font-size: 20px;">🚀</span>
+        <span onclick="addEmoji('❤️')" style="cursor:pointer; font-size: 20px;">❤️</span>
+        <span onclick="addEmoji('😎')" style="cursor:pointer; font-size: 20px;">😎</span>
+        <span onclick="addEmoji('🎉')" style="cursor:pointer; font-size: 20px;">🎉</span>
+        <span onclick="addEmoji('🤔')" style="cursor:pointer; font-size: 20px;">🤔</span>
+        <span onclick="addEmoji('😢')" style="cursor:pointer; font-size: 20px;">😢</span>
+        <span onclick="addEmoji('🤙')" style="cursor:pointer; font-size: 20px;">🤙</span>
+        <span onclick="addEmoji('🤡')" style="cursor:pointer; font-size: 20px;">🤡</span>
+        <span onclick="addEmoji('💀')" style="cursor:pointer; font-size: 20px;">💀</span>
+        <span onclick="addEmoji('💎')" style="cursor:pointer; font-size: 20px;">💎</span>
+        <span onclick="addEmoji('🥶')" style="cursor:pointer; font-size: 20px;">🥶</span>
+        <span onclick="addEmoji('😱')" style="cursor:pointer; font-size: 20px;">😱</span>
+        <span onclick="addEmoji('💯')" style="cursor:pointer; font-size: 20px;">💯</span>
+        <span onclick="addEmoji('✨')" style="cursor:pointer; font-size: 20px;">✨</span>
+        <span onclick="addEmoji('✅')" style="cursor:pointer; font-size: 20px;">✅</span>
     </div>
 </div>
 
@@ -1156,6 +1200,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
