@@ -655,10 +655,10 @@ body, html {
 </style>
 
 <div class="app-wrap">
+    <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div style="padding:15px; display:flex; gap:15px; align-items:center; border-bottom:1px solid #0e1621;">
             <div onclick="toggleMenu()" style="cursor:pointer; font-size:22px;">☰</div> 
-
             <b style="color:var(--acc); font-size:18px;">F-TOP</b>
         </div>
         <div style="flex:1; overflow-y:auto;">
@@ -675,33 +675,75 @@ body, html {
             {% endfor %}
         </div>
         <button class="btn-spin" onclick="createRoom()" style="margin:15px; width:55px; height:55px; background:var(--acc); border:none; color:white; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: flex; align-items:center; justify-content:center; font-size: 24px;">
-        <span>+</span>
+            <span>+</span>
         </button>
-
     </div>
 
+    <!-- MAIN CHAT -->
     <div class="main" id="mainChat">
-    {% if current %}
-    <div class="header" style="display:flex; align-items:center; padding: 10px 15px; background: #242f3d; border-bottom: 1px solid #111;">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div onclick="toggleMobileSidebar()" class="mobile-only" style="cursor:pointer; display:flex; align-items:center;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
+        {% if current %}
+        <div class="header" style="display:flex; align-items:center; justify-content:space-between; padding: 10px 15px; background: #242f3d; border-bottom: 1px solid #111;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div onclick="toggleMobileSidebar()" class="mobile-only" style="cursor:pointer; display:none; align-items:center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </div>
+                <b style="font-size: 18px;">{{ current }}</b>
             </div>
-            <b style="font-size: 18px;">{{ current }}</b>
+
+            <div style="display:flex; gap:15px; align-items:center;">
+                <button onclick="openRoomCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
+                {% if current != 'BOT' %}
+                <button onclick="inviteFriend()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-weight:bold; font-size:14px;">➕ ИНВАЙТ</button>
+                {% endif %}
+            </div>
         </div>
+
+        <div id="chat" style="flex:1; overflow-y:auto;"></div>
+
+        {% if current != 'BOT' %}
+        <div class="input-bar" style="display:flex; align-items:center; gap:10px; padding:10px; background:#17212b;">
+            <button onclick="toggleEmoji()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">😊</button>
+            
+            <div id="emojiPicker" class="emoji-picker">
+                <!-- Твои смайлы здесь -->
+                <span onclick="addEmoji('😀')">😀</span>
+                <span onclick="addEmoji('😂')">😂</span>
+                <span onclick="addEmoji('😍')">😍</span>
+                <span onclick="addEmoji('👍')">👍</span>
+                <span onclick="addEmoji('🔥')">🔥</span>
+                <span onclick="addEmoji('🚀')">🚀</span>
+                <span onclick="addEmoji('❤️')">❤️</span>
+                <span onclick="addEmoji('😎')">😎</span>
+                <span onclick="addEmoji('🎉')">🎉</span>
+                <span onclick="addEmoji('🤔')">🤔</span>
+                <span onclick="addEmoji('😢')">😢</span>
+                <span onclick="addEmoji('🤙')">🤙</span>
+                <span onclick="addEmoji('🤡')">🤡</span>
+                <span onclick="addEmoji('💀')">💀</span>
+                <span onclick="addEmoji('💎')">💎</span>
+                <span onclick="addEmoji('🥶')">🥶</span>
+                <span onclick="addEmoji('😱')">😱</span>
+                <span onclick="addEmoji('💯')">💯</span>
+                <span onclick="addEmoji('✨')">✨</span>
+                <span onclick="addEmoji('✅')">✅</span>
+            </div>
+
+            <input type="file" id="mediaInp" hidden accept="image/*,video/*" onchange="sendMedia(this)">
+            <button onclick="document.getElementById('mediaInp').click()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📎</button>
+
+            <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()" style="flex:1;">
+            <button onclick="sendText()" style="background:none; border:none; color:var(--acc); font-weight:bold; font-size:24px;">➤</button>
+        </div>
+        {% endif %}
+        
+        {% endif %} <!-- Закрытие if current -->
     </div>
-    {% endif %}
 </div>
 
-
-
-            <button onclick="openRoomCall()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📞</button>
-
-            
-<!-- Окно звонка -->
+<!-- Окно звонка вынесено в конец body -->
 <div id="callInterface" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
     <div style="display:flex; gap:10px;">
         <video id="remoteVideo" autoplay style="width:300px; border-radius:15px; background:#000;"></video>
@@ -709,55 +751,7 @@ body, html {
     </div>
     <button onclick="endCall()" style="background:#ff4b4b; color:white; border:none; padding:15px 30px; border-radius:30px; cursor:pointer; font-weight:bold;">Завершить</button>
 </div>
-            
-            {% if current != 'BOT' %}<button onclick="inviteFriend()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-weight:bold; font-size:14px;">➕ ИНВАЙТ</button>{% endif %}<!-- Кнопка в хедере -->
-            
 
-
-        </div>
-        <div id="chat"></div>
-        {% if current != 'BOT' %}
-        <div class="input-bar">
-            <input type="file" id="imgInp" hidden onchange="sendPhoto(this)">
-            <div style="position: relative; display: flex; align-items: center; gap: 10px;">
-    <!-- Кнопка смайлов -->
-    <button onclick="toggleEmoji()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">😊</button>
-    
-    <!-- Сама панель (добавь свои любимые смайлы сюда) -->
-    <div id="emojiPicker" class="emoji-picker">
-        <span onclick="addEmoji('😀')" style="cursor:pointer; font-size: 20px;">😀</span>
-        <span onclick="addEmoji('😂')" style="cursor:pointer; font-size: 20px;">😂</span>
-        <span onclick="addEmoji('😍')" style="cursor:pointer; font-size: 20px;">😍</span>
-        <span onclick="addEmoji('👍')" style="cursor:pointer; font-size: 20px;">👍</span>
-        <span onclick="addEmoji('🔥')" style="cursor:pointer; font-size: 20px;">🔥</span>
-        <span onclick="addEmoji('🚀')" style="cursor:pointer; font-size: 20px;">🚀</span>
-        <span onclick="addEmoji('❤️')" style="cursor:pointer; font-size: 20px;">❤️</span>
-        <span onclick="addEmoji('😎')" style="cursor:pointer; font-size: 20px;">😎</span>
-        <span onclick="addEmoji('🎉')" style="cursor:pointer; font-size: 20px;">🎉</span>
-        <span onclick="addEmoji('🤔')" style="cursor:pointer; font-size: 20px;">🤔</span>
-        <span onclick="addEmoji('😢')" style="cursor:pointer; font-size: 20px;">😢</span>
-        <span onclick="addEmoji('🤙')" style="cursor:pointer; font-size: 20px;">🤙</span>
-        <span onclick="addEmoji('🤡')" style="cursor:pointer; font-size: 20px;">🤡</span>
-        <span onclick="addEmoji('💀')" style="cursor:pointer; font-size: 20px;">💀</span>
-        <span onclick="addEmoji('💎')" style="cursor:pointer; font-size: 20px;">💎</span>
-        <span onclick="addEmoji('🥶')" style="cursor:pointer; font-size: 20px;">🥶</span>
-        <span onclick="addEmoji('😱')" style="cursor:pointer; font-size: 20px;">😱</span>
-        <span onclick="addEmoji('💯')" style="cursor:pointer; font-size: 20px;">💯</span>
-        <span onclick="addEmoji('✨')" style="cursor:pointer; font-size: 20px;">✨</span>
-        <span onclick="addEmoji('✅')" style="cursor:pointer; font-size: 20px;">✅</span>
-    </div>
-</div>
-
-            <input type="file" id="imgInp" hidden accept="image/*,video/*" onchange="sendMedia(this)">
-            <button onclick="document.getElementById('imgInp').click()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📎</button>
-
-            <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()">
-            <button onclick="sendText()" style="background:none; border:none; color:var(--acc); font-weight:bold; font-size:24px;">➤</button>
-        </div>
-        {% endif %}
-        {% endif %}
-    </div>
-</div>
 
 <script>
     const me = "{{ username }}";
@@ -1137,6 +1131,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
