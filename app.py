@@ -784,38 +784,21 @@ body, html {
 <script>
     function sendPhoto(input) {
     if (!input.files || !input.files[0]) return;
-    
-    const file = input.files[0];
-    
-    // Проверка размера (например, не больше 5МБ), чтобы сервер не упал
-    if (file.size > 5 * 1024 * 1024) {
-        alert("Файл слишком большой! Максимум 5МБ");
-        return;
-    }
-
     const reader = new FileReader();
     reader.onload = async (e) => {
-        const base64Data = e.target.result;
-        
-        try {
-            await fetch('/send_msg', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({
-                    room: activeRoom, 
-                    msg: base64Data, 
-                    type: 'img' 
-                }) 
-            });
-            // Очищаем инпут, чтобы можно было выбрать то же фото снова
-            input.value = ""; 
-            loadData(); // Обновляем чат
-        } catch (err) {
-            console.error("Ошибка при отправке фото:", err);
-            alert("Не удалось отправить фото");
-        }
+        // e.target.result — это и есть строка Base64 с фото
+        await fetch('/send_msg', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({
+                room: activeRoom, 
+                msg: e.target.result, 
+                type: 'img'
+            }) 
+        });
+        loadData(); // Обновляем чат сразу после отправки
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(input.files[0]);
 }
 
     function toggleMenu() {
@@ -1053,23 +1036,39 @@ def login():
             return redirect('/')
             
     # Твой HTML формы ниже без изменений...
-    return '''<body style="background:#0e1621;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;margin:0;">
-    <form method="POST" style="background:#17212b;padding:30px;border-radius:20px;display:flex;flex-direction:column;gap:15px;width:90%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-        <h2 style="margin:0;color:#5288c1;text-align:center;">Secure X</h2>
+    return '''<head>
+    <!-- Мета-тег, чтобы форма не была мелкой на телефонах -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+</head>
+<body style="background:#0e1621;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;margin:0;padding:20px;box-sizing:border-box;">
+    
+    <form method="POST" style="background:#17212b;padding:30px;border-radius:20px;display:flex;flex-direction:column;gap:15px;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.5);box-sizing:border-box;">
+        
+        <h2 style="margin:0;color:#5288c1;text-align:center;font-size:24px;">Secure X</h2>
         <p style="margin:0;font-size:12px;color:gray;text-align:center;">Вход или создание аккаунта</p>
         
-        <input name="nick" placeholder="Никнейм" required style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;">
-        <input name="pass" type="password" placeholder="Пароль" required style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;">
+        <!-- В инпутах ставим font-size: 16px, чтобы iPhone не приближал экран при клике -->
+        <input name="nick" placeholder="Никнейм" required 
+            style="padding:14px;border-radius:12px;border:none;background:#242f3d;color:white;outline:none;font-size:16px;">
         
-        <!-- НОВОЕ ПОЛЕ -->
+        <input name="pass" type="password" placeholder="Пароль" required 
+            style="padding:14px;border-radius:12px;border:none;background:#242f3d;color:white;outline:none;font-size:16px;">
+        
         <div style="display:flex; flex-direction:column; gap:5px;">
-            <label style="font-size:11px; color:#5288c1; margin-left:5px;">Ссылка на Steam (необязательно)</label>
-            <input name="steam" placeholder="https://steamcommunity.com..." style="padding:12px;border-radius:10px;border:none;background:#242f3d;color:white;outline:none;border:1px solid rgba(82, 136, 193, 0.2);">
+            <label style="font-size:11px; color:#5288c1; margin-left:5px; text-transform:uppercase; letter-spacing:0.5px;">Ссылка на Steam (опционально)</label>
+            <input name="steam" placeholder="https://steamcommunity.com..." 
+                style="padding:14px;border-radius:12px;border:none;background:#242f3d;color:white;outline:none;border:1px solid rgba(82, 136, 193, 0.2);font-size:16px;">
         </div>
 
-        <button style="padding:15px;border-radius:10px;border:none;background:#5288c1;color:white;font-weight:bold;cursor:pointer;transition:0.3s;margin-top:10px;" onmouseover="this.style.background='#6399d2'" onmouseout="this.style.background='#5288c1'">ВОЙТИ В СЕТЬ</button>
+        <button type="submit" 
+            style="padding:16px;border-radius:12px;border:none;background:#5288c1;color:white;font-weight:bold;cursor:pointer;transition:0.3s;margin-top:10px;font-size:16px; -webkit-appearance: none;">
+            ВОЙТИ В СЕТЬ
+        </button>
+        
     </form>
+
 </body>
+
 '''
 
 @app.route('/logout')
@@ -1134,6 +1133,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
