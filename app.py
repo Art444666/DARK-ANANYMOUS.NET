@@ -891,100 +891,7 @@ body, html {
         fetch('/accept', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({room:r})}).then(() => location.href='/?room='+encodeURIComponent(r));
     }
 
-    function toggleCustom() {
-        const p = document.getElementById("customPanel");
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
-    }
-
-    if(window.innerWidth <= 768) {
-        document.querySelectorAll('.mobile-only').forEach(el => el.style.display = 'block');
-    }
-
-    if(activeRoom) { loadData(); setInterval(loadData, 2500); }
-    if(localStorage.getItem("chatTheme")) setTheme(localStorage.getItem("chatTheme"));
-
-    function toggleEmoji() {
-        const picker = document.getElementById('emojiPicker');
-        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid';
-    }
-
-    function addEmoji(emoji) {
-        const msgInput = document.getElementById('msg');
-        msgInput.value += emoji;
-        msgInput.focus(); 
-    }
-
-    document.addEventListener('mousedown', function(e) {
-        const picker = document.getElementById('emojiPicker');
-        const emojiBtn = e.target.closest('button');
-        if (picker && !picker.contains(e.target) && (!emojiBtn || emojiBtn.innerText !== '😊')) {
-            picker.style.display = 'none';
-        }
-    });
-
-    function getRoomHash(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = ((hash << 5) - hash) + str.charCodeAt(i);
-            hash |= 0; 
-        }
-        return Math.abs(hash).toString(36);
-    }
-
-    function openRoomCall() {
-        const room = activeRoom || "Global";
-        const roomSecret = getRoomHash(room + "SecureX_Salt_2024");
-        const callUrl = "https://meet.jit.si/" + roomSecret;
-        window.open(callUrl, '_self');
-        const i = document.getElementById("msg");
-        const oldVal = i.value;
-        i.value = "📞 Я в звонке этой комнаты! Залетайте: " + callUrl;
-        sendText();
-        i.value = oldVal;
-    }
-
-    const msgInput = document.getElementById('msg');
-    const chatBox = document.getElementById('chat');
-    function scrollToBottom() { if(chatBox) chatBox.scrollTop = chatBox.scrollHeight; }
-
-    if(msgInput) {
-        msgInput.addEventListener('focus', () => { setTimeout(scrollToBottom, 300); });
-    }
-    function toggleCustom() {
-    const p = document.getElementById("customPanel");
-    const isHidden = p.style.display === 'none' || p.style.display === '';
-    p.style.display = isHidden ? 'flex' : 'none';
-}
-
-function openSettings() {
-    // Закрываем мини-меню
-    toggleMenu();
-    // Открываем большое окно
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings(event) {
-    // Закрываем только если нажали на крестик или на темный фон
-    if (!event || event.target.id === 'settingsModal') {
-        document.getElementById('settingsModal').style.display = 'none';
-    }
-}
-
-function manualScrollDown() {
-    const chat = document.getElementById("chat");
-    if(chat) {
-        chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
-        closeSettings(null); // Закрываем настройки после промотки
-    }
-}
-
-function toggleCustom() {
-    const p = document.getElementById("customPanel");
-    // Переключаем класс active вместо прямой правки стилей
-    p.classList.toggle('active');
-}
-
-function setTheme(t) {
+ function setTheme(t) {
     const chat = document.getElementById("mainChat");
     const themes = {
         'default': 'var(--bg)',
@@ -998,38 +905,47 @@ function setTheme(t) {
 
     if(chat) {
         chat.style.background = themes[t] || themes['default'];
-        // Добавляем плавность смены фона
         chat.style.transition = "background 0.5s ease";
     }
     
     localStorage.setItem("chatTheme", t);
-    
-    // Закрываем меню после выбора (как в нормальных приложениях)
     setTimeout(toggleCustom, 200); 
+} // Закрыли setTheme правильно
 
-    
 function toggleMobileSidebar() {
     const sidebar = document.querySelector('.sidebar');
     if (sidebar) {
         sidebar.classList.toggle('active');
     }
-    // Если есть элемент с классом sidebar-overlay, переключаем и его
     const overlay = document.querySelector('.sidebar-overlay');
     if (overlay) {
         overlay.classList.toggle('active');
     }
-} // Вот тут была лишняя скобка с точкой запятой, я её убрал
+}
 
-// Закрываем меню при клике на комнату (для мобилок)
+// Слушатель кликов для закрытия меню на мобилках
 document.addEventListener('click', (e) => {
-    if (window.innerWidth <= 768 && e.target.closest('.room-item')) {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) sidebar.classList.remove('active');
-        const overlay = document.querySelector('.sidebar-overlay');
-        if (overlay) overlay.classList.remove('active');
+    if (window.innerWidth <= 768) {
+        if (e.target.closest('.room-item')) {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.classList.remove('active');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.remove('active');
+        }
     }
 });
+
+// Оставляем только ОДНУ версию toggleCustom
+function toggleCustom() {
+    const p = document.getElementById("customPanel");
+    if (p) {
+        p.classList.toggle('active');
+        // Если класса active нет в CSS, используй строку ниже:
+        // p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+    }
+}
 </script>
+
 
 </body>
 </html>
@@ -1144,6 +1060,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
