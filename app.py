@@ -756,6 +756,26 @@ body, html {
 
 
 <script>
+    function toggleMenu() {
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('overlay');
+    const main = document.getElementById('mainChat');
+
+    if (drawer.style.left === '0px') {
+        drawer.style.left = '-320px';
+        overlay.style.display = 'none';
+        if(main) main.style.filter = 'none';
+    } else {
+        drawer.style.left = '0px';
+        overlay.style.display = 'block';
+        if(main) main.style.filter = 'blur(5px)';
+    }
+}
+
+function toggleCustom() {
+    const panel = document.getElementById('customPanel');
+    panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'flex' : 'none';
+}
     // 1. ИНИЦИАЛИЗАЦИЯ И ДАННЫЕ
     const me = "{{ username }}";
     const activeRoom = "{{ current }}";
@@ -1052,6 +1072,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
