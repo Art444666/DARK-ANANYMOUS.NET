@@ -8,14 +8,27 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
 
 # --- ХРАНИЛИЩА ---
+users_auth = {
+    "1f": generate_password_hash("94488"),
+    "Kabanchikhors": generate_password_hash("Kabanchikhors")
+}
+
+# Данные профилей (все внутри ника)
+users_data = {
+    "1f": {
+        "invites": [], 
+        "steam": "https://steamcommunity.com/id/1ftop/",
+        "avatar": "https://cdn-icons-png.flaticon.com"
+    },
+    "Kabanchikhors": {
+        "invites": [], 
+        "steam": "https://steamcommunity.com/profiles/76561199817463038/",
+        "avatar": "https://cdn-icons-png.flaticon.com"
+    }
+}
+
 rooms_db = {}     
 messages_db = {}  
-users_auth = {"1f": generate_password_hash("94488")
-             "Kabanchikhors": generate_password_hash("Kabanchikhors")
-             }   # { nick: hash_password }
-users_data = {"1f": {"invites": []}, "steam": "https://steamcommunity.com/id/1ftop/"
-             "Kabanchikhors": {"invites": []}, "steam": "https://steamcommunity.com/profiles/76561199817463038/"
-             }   # { nick: {invites: []} }
 
 HTML = """
 <!DOCTYPE html>
@@ -1200,6 +1213,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
