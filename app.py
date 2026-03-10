@@ -394,6 +394,8 @@ body, html {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
+<div id="overlay" onclick="toggleMenu()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; backdrop-filter:blur(3px);"></div>
+
 
 <div id="drawer">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -660,7 +662,7 @@ body, html {
     <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
         <div style="padding:15px; display:flex; gap:15px; align-items:center; border-bottom:1px solid #0e1621;">
-            <div onclick="toggleMenu()" style="cursor:pointer; font-size:22px;">☰</div> 
+            <div onclick="toggleMenu()" style="cursor:pointer; font-size:22px; padding:5px;">☰</div> 
             <b style="color:var(--acc); font-size:18px;">F-TOP</b>
         </div>
         <div style="flex:1; overflow-y:auto;">
@@ -1072,6 +1074,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
