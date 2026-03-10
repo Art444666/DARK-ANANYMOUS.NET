@@ -1014,7 +1014,7 @@ function setTheme(t) {
     const overlay = document.querySelector('.sidebar-overlay');
     if(overlay) overlay.classList.toggle('active');
 
-});
+    }
 });
 </script>
 
@@ -1131,6 +1131,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
