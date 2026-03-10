@@ -17,13 +17,11 @@ users_auth = {
 users_data = {
     "1f": {
         "invites": [], 
-        "steam": "https://steamcommunity.com/id/1ftop/",
-        "avatar": "https://cdn-icons-png.flaticon.com"
+        "steam": "https://steamcommunity.com/id/1ftop/"
     },
     "Kabanchikhors": {
         "invites": [], 
-        "steam": "https://steamcommunity.com/profiles/76561199817463038/",
-        "avatar": "https://cdn-icons-png.flaticon.com"
+        "steam": "https://steamcommunity.com/profiles/76561199817463038/" 
     }
 }
 
@@ -1213,6 +1211,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
