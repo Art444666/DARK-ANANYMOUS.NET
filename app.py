@@ -8,12 +8,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
 
 # --- ХРАНИЛИЩА ---
+rooms_db = {}     
+messages_db = {}  
+
 users_auth = {
     "1f": generate_password_hash("94488"),
     "Kabanchikhors": generate_password_hash("Kabanchikhors")
 }
 
-# Данные профилей (все внутри ника)
 users_data = {
     "1f": {
         "invites": [], 
@@ -21,12 +23,10 @@ users_data = {
     },
     "Kabanchikhors": {
         "invites": [], 
-        "steam": "https://steamcommunity.com/profiles/76561199817463038/" 
+        "steam": "https://steamcommunity.com/profiles/76561199817463038/"
     }
 }
-
-rooms_db = {}     
-messages_db = {}  
+  
 
 HTML = """
 <!DOCTYPE html>
@@ -1211,6 +1211,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
