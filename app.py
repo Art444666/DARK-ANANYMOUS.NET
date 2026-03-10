@@ -204,96 +204,101 @@ HTML = """
 </style>
 
 <style>
+/* --- БАЗОВЫЕ НАСТРОЙКИ --- */
+:root {
+    --bg: #0e1621;
+    --side: #17212b;
+    --acc: #5288c1;
+    --white: #ffffff;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    width: 100%;
+    height: 100vh;
+    background: var(--bg);
+    color: var(--white);
+    font-family: "Ubuntu", sans-serif;
+}
+
+/* --- ОСНОВНАЯ СЕТКА (ПК) --- */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.sidebar {
+    width: 300px;
+    background: var(--side);
+    border-right: 1px solid #000;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    transition: transform 0.3s ease, left 0.3s ease;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    position: relative;
+}
+
+/* --- КНОПКА "НАЙТИ ДРУГА" И "ПОЛЬЗОВАТЕЛИ" (CTA) --- */
 .cta {
-  position: relative;
-  margin: auto;
-  padding: 12px 18px;
-  transition: all 0.2s ease;
-  border: none;
-  background: none;
-  cursor: pointer;
+    position: relative;
+    margin: 10px auto;
+    padding: 12px 18px;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
 }
 
 .cta:before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50px;
-  background: #234567;
-  width: 45px;
-  height: 45px;
-  transition: all 0.3s ease;
-  display: block;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.cta::after {
-  content: "Пользователи";
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50px;
-  background: #fff;
-  width: 9px;
-  height: 21px;
-  transition: all 0.3s ease;
-  font-family: "Ubuntu", sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  padding: 12px 18px;
-  z-index: 2;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  text-align: left;
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    border-radius: 50px;
+    background: #234567;
+    width: 45px;
+    height: 45px;
+    transition: all 0.3s ease;
+    z-index: 1;
 }
 
 .cta span {
-  position: relative;
-  font-family: "Ubuntu", sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #234567;
+    position: relative;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--acc);
+    z-index: 3;
 }
 
 .cta svg {
-  position: relative;
-  top: 0;
-  margin-left: 10px;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke: #234567;
-  stroke-width: 2;
-  transform: translateX(-5px);
-  transition: all 0.3s ease;
-  z-index: 2;
+    position: relative;
+    margin-left: 10px;
+    fill: none;
+    stroke: var(--acc);
+    stroke-width: 2;
+    transform: translateX(-5px);
+    transition: all 0.3s ease;
+    z-index: 3;
 }
 
-.cta:hover:before {
-  width: 100%;
-}
-.cta:hover::after {
-  width: 100%;
-}
+.cta:hover:before { width: 100%; }
+.cta:hover span { color: #fff; }
+.cta:hover svg { transform: translateX(0); stroke: #fff; }
+.cta:active { transform: scale(0.95); }
 
-.cta:hover svg {
-  transform: translateX(0);
-  stroke: #fff;
-}
-
-.cta:active {
-  transform: scale(0.95);
-}
-</style>
-
-<style>
-    /* Панель эмодзи */
+/* --- ЭМОДЗИ И ТЕМЫ --- */
 .emoji-picker {
     display: none;
     position: absolute;
@@ -308,18 +313,14 @@ HTML = """
     z-index: 100;
     overflow-y: auto;
     box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    grid-template-columns: repeat(6, 1fr);
 }
-.emoji-picker span {
-    font-size: 24px;
-    cursor: pointer;
-    padding: 5px;
-    display: inline-block;
-    transition: transform 0.1s;
-}
+
+.emoji-picker span { font-size: 24px; cursor: pointer; transition: transform 0.1s; }
 .emoji-picker span:hover { transform: scale(1.2); }
 
 .theme-panel {
-    display: none; /* Скрыто по умолчанию */
+    display: none;
     flex-direction: column;
     gap: 10px;
     margin-top: 15px;
@@ -327,193 +328,67 @@ HTML = """
     background: #242f3d;
     border-radius: 14px;
     border: 1px solid rgba(82, 136, 193, 0.2);
-    /* Анимация появления */
     animation: slideDown 0.3s ease-out;
 }
 
-/* Класс, который мы будем добавлять через JS */
-.theme-panel.active {
-    display: flex;
-}
+.theme-panel.active { display: flex; }
 
 .btn-theme-opt {
-    width: 100%;
-    height: 40px;
-    border-radius: 10px;
-    border: 2px solid transparent;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    width: 100%; height: 40px; border-radius: 10px; border: 2px solid transparent;
+    color: white; font-weight: bold; cursor: pointer; transition: all 0.2s ease;
 }
 
-.btn-theme-opt:hover {
-    transform: scale(1.02);
-    border-color: var(--acc);
-}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-.btn-theme-opt:active {
-    transform: scale(0.98);
-}
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.cta {
-  position: relative;
-  margin: auto;
-  padding: 12px 18px;
-  transition: all 0.2s ease;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-
-.cta:before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50px;
-  background: #234567;
-  width: 45px;
-  height: 45px;
-  transition: all 0.3s ease;
-  display: block;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.cta::after {
-  content: "Найти друга";
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 50px;
-  background: #fff;
-  width: 9px;
-  height: 21px;
-  transition: all 0.3s ease;
-  font-family: "Ubuntu", sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  padding: 12px 18px;
-  z-index: 2;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  text-align: left;
-}
-
-.cta span {
-  position: relative;
-  font-family: "Ubuntu", sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #234567;
-}
-
-.cta svg {
-  position: relative;
-  top: 0;
-  margin-left: 10px;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke: #234567;
-  stroke-width: 2;
-  transform: translateX(-5px);
-  transition: all 0.3s ease;
-  z-index: 2;
-}
-
-.cta:hover:before {
-  width: 100%;
-}
-.cta:hover::after {
-  width: 100%;
-}
-
-.cta:hover svg {
-  transform: translateX(0);
-  stroke: #fff;
-}
-
-.cta:active {
-  transform: scale(0.95);
-}
-/* Общие правила для адаптивности */
-body, html {
-    overflow-x: hidden; /* Запрещаем горизонтальную прокрутку */
-    width: 100%;
-}
-
-/* Основной контейнер чата */
-.chat-container {
-    width: 95%;          /* На мобилках почти во весь экран */
-    max-width: 800px;    /* На компах не шире 800px */
-    margin: 0 auto;
-}
-
-/* Адаптация для экранов меньше 600px */
-@media (max-width: 600px) {
-    .sidebar {
-        display: none;   /* Прячем список комнат, если он мешает */
-    }
-    
-    input, button {
-        font-size: 16px !important; /* Важно: предотвращает авто-зум в iOS */
-    }
-    
-    .messages {
-        height: 70vh;    /* Делаем высоту чата удобной для телефона */
-    }
-    
-    .emoji-picker {
-        grid-template-columns: repeat(6, 1fr); /* Больше колонок для мелких эмодзи */
-    }
-}
+/* --- АДАПТИВНОСТЬ (МОБИЛКИ) --- */
 @media (max-width: 768px) {
-    /* Показываем стрелку */
-    .mobile-back {
-        display: flex !important;
-    }
-
-    /* Боковая панель теперь выезжает поверх чата */
     .sidebar {
         position: fixed;
-        left: -100%; /* Спрятана за экраном */
+        left: -100%; /* Спрятана слева */
         top: 0;
-        width: 85%;
+        width: 80%;
         height: 100%;
-        z-index: 999;
-        background: #17212b;
-        transition: transform 0.3s ease;
+        z-index: 9999;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.5);
     }
 
-    /* Когда меню активно — выезжает */
     .sidebar.active {
-        transform: translateX(100%);
+        left: 0; /* Выезжает как в ТГ */
     }
 
-    /* Затемнение фона при открытом меню (опционально) */
+    .mobile-only {
+        display: flex !important; /* Показываем стрелку */
+        cursor: pointer;
+        margin-right: 15px;
+    }
+
+    .main { width: 100%; }
+    
+    input, button { font-size: 16px !important; } /* Фикс зума на iOS */
+
     .sidebar-overlay {
         display: none;
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 998;
+        background: rgba(0,0,0,0.6);
+        z-index: 9998;
+        backdrop-filter: blur(2px);
     }
     .sidebar-overlay.active { display: block; }
 }
 
+/* Хедер чата */
+.header {
+    background: #242f3d;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #111;
+}
+
+.mobile-only { display: none; } /* Скрыто на ПК */
 </style>
+
 
 <script src="https://unpkg.com"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1137,7 +1012,15 @@ function setTheme(t) {
     
     // Закрываем меню после выбора (как в нормальных приложениях)
     setTimeout(toggleCustom, 200); 
-    });
+
+    
+    function toggleMobileSidebar() {
+    document.querySelector('.sidebar').classList.toggle('active');
+    // Если есть элемент с классом sidebar-overlay, переключаем и его
+    const overlay = document.querySelector('.sidebar-overlay');
+    if(overlay) overlay.classList.toggle('active');
+
+});
 });
 </script>
 
@@ -1254,6 +1137,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
