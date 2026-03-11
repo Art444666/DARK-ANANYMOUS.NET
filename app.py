@@ -390,7 +390,7 @@ body, html {
 @media (max-width: 768px) {
     /* Поднимаем панель ввода выше */
     .input-bar {
-        padding-bottom: 30px !important; /* Увеличиваем нижний отступ */
+        padding-bottom: 60px !important; /* Увеличиваем нижний отступ */
         background: #17212b;
         border-top: 1px solid #0e1621;
         position: sticky;
@@ -1135,6 +1135,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
