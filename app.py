@@ -1026,7 +1026,7 @@ def login():
             if check_password_hash(users_auth[u], p):
                 session['user'] = u
                 # ПЕРЕХОД К БОТУ ПОСЛЕ ВХОДА
-                return redirect('/?room=BOT')
+                return redirect('/?room=F-GRAM')
             return '<body style="background:#0e1621;color:white;padding:20px;"><h2>Ошибка: Неверный пароль</h2><a href="/login" style="color:#5288c1">Назад</a></body>'
         else:
             # РЕГИСТРАЦИЯ НОВОГО ЮЗЕРА
@@ -1034,7 +1034,7 @@ def login():
             users_data[u] = {'invites': [], 'steam': steam_link} 
             session['user'] = u
             # ПЕРЕХОД К БОТУ ПОСЛЕ РЕГИСТРАЦИИ
-            return redirect('/?room=BOT')
+            return redirect('/?room=F-GRAM')
 
             
     # Твой HTML формы ниже без изменений...
@@ -1135,6 +1135,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
