@@ -1011,9 +1011,16 @@ function toggleCustom() {
 @app.route('/')
 def index():
     if 'user' not in session: return redirect('/login')
-    user, room = session['user'], request.args.get('room')
-    my_rooms = [n for n, v in rooms_db.items() if user in v['members']]
+    
+    user = session['user']
+    # Если в URL нет ?room=, то по умолчанию ставим 'BOT'
+    room = request.args.get('room') or 'BOT'
+    
+    # Собираем список комнат, где состоит юзер
+    my_rooms = [n for n, v in rooms_db.items() if user in v.get('members', [])]
+    
     return render_template_string(HTML, username=user, my_rooms=my_rooms, current=room)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1135,6 +1142,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
