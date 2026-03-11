@@ -397,14 +397,10 @@ body, html {
         bottom: 0;
         z-index: 100;
     }
-
-    /* Делаем само поле ввода чуть крупнее для удобства нажатия пальцем */
     .inp {
         height: 45px;
         font-size: 16px !important; /* Важно против авто-зума iOS */
     }
-
-    /* Немного увеличиваем расстояние между кнопками (скрепка, смайлы) */
     .input-bar button {
         padding: 5px;
         min-width: 40px;
@@ -759,7 +755,7 @@ body, html {
                 <span onclick="addEmoji('✅')">✅</span>
             </div>
 
-            <input type="file" id="mediaInp" hidden accept="image/*,video/*" onchange="sendMedia(this)">
+            <input type="file" id="imgInp" hidden accept="image/*" onchange="sendPhoto(this)">
             <button onclick="document.getElementById('mediaInp').click()" style="background:none; border:none; color:var(--acc); cursor:pointer; font-size:22px;">📎</button>
 
             <input id="msg" class="inp" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendText()" style="flex:1;">
@@ -784,22 +780,30 @@ body, html {
 <script>
     function sendPhoto(input) {
     if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
     const reader = new FileReader();
+
     reader.onload = async (e) => {
-        // e.target.result — это и есть строка Base64 с фото
+        // e.target.result содержит Base64 строку, которую loadData вставит в src картинки
         await fetch('/send_msg', { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({
                 room: activeRoom, 
                 msg: e.target.result, 
-                type: 'img'
+                type: 'img' // Этот тип активирует условие в твоем loadData
             }) 
         });
-        loadData(); // Обновляем чат сразу после отправки
+        
+        input.value = ""; // Очищаем поле выбора, чтобы можно было отправить то же фото снова
+        loadData();       // Мгновенно обновляем чат
     };
-    reader.readAsDataURL(input.files[0]);
+    
+    reader.readAsDataURL(file);
 }
+
+
 
     function toggleMenu() {
     const drawer = document.getElementById('drawer');
@@ -1142,6 +1146,7 @@ def show_users():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
 
 
