@@ -5,7 +5,7 @@ from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__, template_folder=".")
 socketio = SocketIO(app, cors_allowed_origins="*")
-app.config['SECRET_KEY'] = 'tg_ultra_secure_94488'
+app.config['SECRET_KEY'] = 'tg_ultra_secure_944883958769384759834759834759847569845769823475983475693458677935867345689743678934578978934578934789635789567896379834578945873457896'
 
 # --- ХРАНИЛИЩА ---
 rooms_db = {}     
@@ -390,7 +390,7 @@ body, html {
 @media (max-width: 768px) {
     /* Поднимаем панель ввода выше */
     .input-bar {
-        padding-bottom: 40px !important; /* Увеличиваем нижний отступ */
+        padding-bottom: 30px !important; /* Увеличиваем нижний отступ */
         background: #17212b;
         border-top: 1px solid #0e1621;
         position: sticky;
